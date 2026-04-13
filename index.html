@@ -5,94 +5,248 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Die Wahrheit</title>
 
-  <!-- Chatroom styles via jsDelivr -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/dist/Chatroom.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/index.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/themes/theme2.css" />
 
-<style>
-  body {
-    margin: 0;
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
-  }
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-  .app-wrapper {
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-  }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #081120, #0f172a, #1e293b);
+      color: #ffffff;
+      overflow: hidden;
+    }
 
-  .header-box {
-    text-align: center;
-    color: white;
-    padding: 15px;
-    background: rgba(0,0,0,0.3);
-  }
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
 
-  .chat-container {
-    flex: 1;
-    width: 100%;
-  }
+    .header-box {
+      flex: 0 0 auto;
+      text-align: center;
+      padding: 28px 20px 18px;
+      background: rgba(0, 0, 0, 0.18);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(6px);
+    }
 
-  .chatroom {
-    height: 100% !important;
-    width: 100% !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-  }
+    .header-box h1 {
+      margin: 0 0 10px 0;
+      font-size: 58px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
 
-  .chatroom__messages {
-    background: #f8fafc !important;
-  }
+    .header-box p {
+      margin: 0;
+      font-size: 28px;
+      color: rgba(255, 255, 255, 0.9);
+    }
 
-  .quick-actions {
-    display: flex;
-    gap: 10px;
-    padding: 10px;
-    justify-content: center;
-    background: rgba(0,0,0,0.3);
-  }
+    .chat-section {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+    }
 
-  .quick-actions button {
-    border: none;
-    border-radius: 999px;
-    padding: 10px 16px;
-    font-size: 14px;
-    cursor: pointer;
-    background: white;
-    color: #0f172a;
-  }
-</style>
+    .chat-container {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+    }
+
+    /* Gesamtcontainer des eingebundenen Chatrooms */
+    .chatroom {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      border: none !important;
+      background: #0b1220 !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+
+    /* Kopfzeile des Chatrooms */
+    .chatroom .chats,
+    .chatroom__messages {
+      background: #0b1220 !important;
+    }
+
+    /* Nachrichtenbereich */
+    .chatroom__messages,
+    .chatroom .messages {
+      flex: 1 1 auto !important;
+      min-height: 0 !important;
+      background:
+        radial-gradient(circle at top, rgba(59, 130, 246, 0.08), transparent 30%),
+        linear-gradient(180deg, #0b1220 0%, #111827 100%) !important;
+      color: #e5e7eb !important;
+      padding-bottom: 24px !important;
+    }
+
+    /* Titel-Leiste im Chat */
+    .chatroom h3,
+    .chatroom .title {
+      background: linear-gradient(90deg, #7c3aed, #2563eb) !important;
+      color: #ffffff !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      padding: 16px 20px !important;
+      font-size: 28px !important;
+      font-weight: 700 !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Bot-Nachrichten */
+    .chatroom .chatroom__messages .message,
+    .chatroom .messages .message {
+      color: #e5e7eb !important;
+    }
+
+    .chatroom .messages .message--bot .message__text,
+    .chatroom .messages .message:nth-child(odd) .message__text,
+    .chatroom .chatroom__messages .message .message__text {
+      background: #1f2937 !important;
+      color: #f9fafb !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 18px !important;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+    }
+
+    /* User-Nachrichten */
+    .chatroom .messages .message--user .message__text {
+      background: linear-gradient(135deg, #2563eb, #7c3aed) !important;
+      color: #ffffff !important;
+      border: none !important;
+    }
+
+    /* Zeitstempel */
+    .chatroom .messages .message .message__meta,
+    .chatroom small,
+    .chatroom time {
+      color: #94a3b8 !important;
+    }
+
+    /* Eingabebereich unten */
+    .chatroom form,
+    .chatroom .input,
+    .chatroom .chatroom__input {
+      background: #0f172a !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+      padding: 14px !important;
+    }
+
+    /* Input-Feld */
+    .chatroom input,
+    .chatroom textarea {
+      background: #111827 !important;
+      color: #f9fafb !important;
+      border: 1px solid #334155 !important;
+      border-radius: 999px !important;
+      padding: 14px 18px !important;
+      font-size: 18px !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    .chatroom input::placeholder,
+    .chatroom textarea::placeholder {
+      color: #94a3b8 !important;
+    }
+
+    /* Submit-Button */
+    .chatroom button,
+    .chatroom input[type="submit"] {
+      border: none !important;
+      border-radius: 999px !important;
+      background: linear-gradient(135deg, #7c3aed, #2563eb) !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+      padding: 12px 22px !important;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .chatroom button:hover,
+    .chatroom input[type="submit"]:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    .quick-actions {
+      flex: 0 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      padding: 14px 18px 18px;
+      background: rgba(0, 0, 0, 0.16);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .quick-actions button {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 15px;
+      cursor: pointer;
+      background: #111827;
+      color: #f8fafc;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .quick-actions button:hover {
+      transform: translateY(-2px);
+      background: #1f2937;
+    }
+
+    @media (max-width: 900px) {
+      .header-box h1 {
+        font-size: 40px;
+      }
+
+      .header-box p {
+        font-size: 20px;
+      }
+
+      .chatroom h3,
+      .chatroom .title {
+        font-size: 22px !important;
+      }
+    }
+  </style>
 </head>
 <body>
-<div class="app-wrapper">
   <div class="header-box">
-    <h1>Die Wahrheit</h1>
-    <p>Stelle eine Frage und finde heraus, was der Bot dir antwortet.</p>
+    <h1>Senatus populusque Romanus</h1>
+    <p>Halt dein Maul und frag einfach.</p>
   </div>
 
-  <div class="chat-container"></div>
+  <div class="chat-section">
+    <div class="chat-container"></div>
 
-  <div class="quick-actions">
-    <button onclick="sendMsg('hello')">Hallo</button>
-    <button onclick="sendMsg('help')">Hilfe</button>
-    <button onclick="sendMsg('who are you')">Wer bist du?</button>
-  </div>
-</div>
+    <div class="quick-actions">
+      <button onclick="sendMsg('hello')">Hallo</button>
+      <button onclick="sendMsg('help')">Hilfe</button>
+      <button onclick="sendMsg('who are you')">Wer bist du?</button>
       <button onclick="sendMsg('what can you do')">Was kannst du?</button>
     </div>
-
-    <div class="footer-note">
-      Tipp: Nutze die Buttons oder schreibe direkt in den Chat.
-    </div>
   </div>
 
-  <!-- Chatroom script via jsDelivr -->
   <script src="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/dist/Chatroom.js"></script>
 
   <script>
@@ -105,9 +259,9 @@
 
     const chatroom = new window.Chatroom({
       host: "https://shiny-waddle-97ppvpwpxj6xfx6qj-5005.app.github.dev",
-      title: "Die Wahrheit",
+      title: "SPQR",
       container: document.querySelector(".chat-container"),
-      welcomeMessage: "Hallo. Ich bin Die Wahrheit. Stelle mir eine Frage oder nutze die Schnellaktionen unter dem Chat.",
+      welcomeMessage: "Hall, Stelle mir eine Frage oder nutze die Schnellaktionen unter dem Chat.",
       speechRecognition: "en-US",
       voiceLang: "en-US"
     });
@@ -117,14 +271,14 @@
     function sendMsg(text) {
       const trySend = () => {
         const input =
-          document.querySelector('input') ||
-          document.querySelector('.chatroom input') ||
-          document.querySelector('textarea');
+          document.querySelector("input") ||
+          document.querySelector(".chatroom input") ||
+          document.querySelector("textarea");
 
         const submitButton =
           document.querySelector('button[type="submit"]') ||
-          document.querySelector('.chatroom__input button') ||
-          document.querySelector('.chatroom button');
+          document.querySelector(".chatroom__input button") ||
+          document.querySelector(".chatroom button");
 
         if (input && submitButton) {
           input.value = text;
