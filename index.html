@@ -1,36 +1,166 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Die Wahrheit</title>
 
   <!-- Chatroom styles via jsDelivr -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/dist/Chatroom.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/index.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/themes/theme2.css" />
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      max-width: 460px;
+    }
+
+    .header-box {
+      text-align: center;
+      color: white;
+      margin-bottom: 18px;
+    }
+
+    .header-box h1 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+    }
+
+    .header-box p {
+      margin: 0;
+      font-size: 15px;
+      opacity: 0.9;
+    }
+
+    .chat-container {
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .chatroom {
+      border-radius: 22px !important;
+      overflow: hidden;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .chatroom__messages {
+      background: #f8fafc !important;
+    }
+
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .quick-actions button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      background: white;
+      color: #0f172a;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .quick-actions button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+    }
+
+    .footer-note {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 13px;
+      margin-top: 14px;
+    }
+  </style>
 </head>
 <body>
-  <div class="chat-container"></div>
+  <div class="app-wrapper">
+    <div class="header-box">
+      <h1>Die Wahrheit</h1>
+      <p>Stelle eine Frage und finde heraus, was der Bot dir antwortet.</p>
+    </div>
+
+    <div class="chat-container"></div>
+
+    <div class="quick-actions">
+      <button onclick="sendMsg('hello')">Hallo</button>
+      <button onclick="sendMsg('help')">Hilfe</button>
+      <button onclick="sendMsg('who are you')">Wer bist du?</button>
+      <button onclick="sendMsg('what can you do')">Was kannst du?</button>
+    </div>
+
+    <div class="footer-note">
+      Tipp: Nutze die Buttons oder schreibe direkt in den Chat.
+    </div>
+  </div>
 
   <!-- Chatroom script via jsDelivr -->
   <script src="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/dist/Chatroom.js"></script>
 
   <script>
-    // Fail-fast hint if the script didn't load
     if (!window.Chatroom) {
-      document.body.insertAdjacentHTML('beforeend',
-        '<div style="padding:12px;color:#fff;background:#c00">Could not load Chatroom.js</div>');
+      document.body.insertAdjacentHTML(
+        "beforeend",
+        '<div style="padding:12px;color:#fff;background:#c00">Could not load Chatroom.js</div>'
+      );
     }
 
-    var chatroom = new window.Chatroom({
+    const chatroom = new window.Chatroom({
       host: "https://shiny-waddle-97ppvpwpxj6xfx6qj-5005.app.github.dev",
       title: "Die Wahrheit",
       container: document.querySelector(".chat-container"),
-      welcomeMessage: "Hello Sir.",
+      welcomeMessage: "Hallo. Ich bin Die Wahrheit. Stelle mir eine Frage oder nutze die Schnellaktionen unter dem Chat.",
       speechRecognition: "en-US",
       voiceLang: "en-US"
     });
+
     chatroom.openChat();
+
+    function sendMsg(text) {
+      const trySend = () => {
+        const input =
+          document.querySelector('input') ||
+          document.querySelector('.chatroom input') ||
+          document.querySelector('textarea');
+
+        const submitButton =
+          document.querySelector('button[type="submit"]') ||
+          document.querySelector('.chatroom__input button') ||
+          document.querySelector('.chatroom button');
+
+        if (input && submitButton) {
+          input.value = text;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          submitButton.click();
+        } else {
+          console.log("Eingabefeld oder Senden-Button noch nicht gefunden.");
+        }
+      };
+
+      setTimeout(trySend, 300);
+    }
   </script>
 </body>
 </html>
