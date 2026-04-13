@@ -31,32 +31,71 @@
     }
 
     .app-shell {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: 260px 1fr;
       width: 100vw;
       height: 100vh;
       background: transparent;
     }
 
-    .topbar {
-      flex: 0 0 auto;
-      padding: 18px 24px 10px;
-      background: transparent;
-      border: none;
-      box-shadow: none;
+    .sidebar {
+      background: rgba(10, 15, 28, 0.72);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(8px);
+      padding: 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }
 
-    .topbar h1 {
+    .sidebar h2 {
       margin: 0;
-      font-size: 22px;
-      font-weight: 700;
+      font-size: 16px;
       color: #f8fafc;
     }
 
-    .topbar p {
-      margin: 6px 0 0;
+    .new-chat-btn {
+      border: none;
+      border-radius: 12px;
+      background: #2563eb;
+      color: white;
+      padding: 10px 14px;
       font-size: 14px;
-      color: #94a3b8;
+      cursor: pointer;
+    }
+
+    .new-chat-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .chat-history {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(31, 41, 55, 0.7);
+      color: #f8fafc;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .history-item:hover {
+      background: rgba(55, 65, 81, 0.9);
+    }
+
+    .main-panel {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: relative;
     }
 
     .chat-section {
@@ -115,7 +154,7 @@
       min-height: 0 !important;
       overflow-y: auto !important;
       color: #e5e7eb !important;
-      padding: 18px 24px 120px !important;
+      padding: 18px 24px 130px !important;
     }
 
     .chatroom .messages .message,
@@ -192,7 +231,7 @@
       color: #94a3b8 !important;
     }
 
-    .chatroom button,
+    /* Sendebutton */
     .chatroom input[type="submit"] {
       flex: 0 0 auto !important;
       width: 46px !important;
@@ -205,13 +244,14 @@
       color: transparent !important;
       cursor: pointer;
       position: relative;
-      box-shadow: none !important;
+      font-size: 0 !important;
     }
 
-    .chatroom input[type="submit"]::before {
+    .chatroom input[type="submit"]::after {
       content: "➜";
       color: #ffffff;
-      font-size: 18px;
+      font-size: 20px;
+      font-weight: 700;
       position: absolute;
       inset: 0;
       display: flex;
@@ -219,7 +259,23 @@
       justify-content: center;
     }
 
-    .chatroom button::before {
+    /* Mikrofonbutton */
+    .chatroom button {
+      flex: 0 0 auto !important;
+      width: 46px !important;
+      min-width: 46px !important;
+      height: 46px !important;
+      padding: 0 !important;
+      border: none !important;
+      border-radius: 12px !important;
+      background: #2563eb !important;
+      color: transparent !important;
+      cursor: pointer;
+      position: relative;
+      font-size: 0 !important;
+    }
+
+    .chatroom button::after {
       content: "🎤";
       font-size: 18px;
       line-height: 1;
@@ -246,7 +302,6 @@
       flex-wrap: wrap;
       gap: 10px;
       justify-content: flex-start;
-      pointer-events: auto;
     }
 
     .quick-actions button {
@@ -266,17 +321,66 @@
       transform: translateY(-1px);
     }
 
+    /* Startscreen */
+    .welcome-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background:
+        radial-gradient(circle at top, rgba(59, 130, 246, 0.14), transparent 30%),
+        linear-gradient(180deg, rgba(11,16,32,0.96) 0%, rgba(16,24,39,0.96) 100%);
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+
+    .welcome-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .welcome-screen h1 {
+      margin: 0 0 12px;
+      font-size: 44px;
+      color: #f8fafc;
+    }
+
+    .welcome-screen p {
+      margin: 0 0 22px;
+      font-size: 18px;
+      color: #94a3b8;
+    }
+
+    .welcome-screen button {
+      border: none;
+      border-radius: 14px;
+      background: #2563eb;
+      color: white;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .welcome-screen button:hover {
+      background: #1d4ed8;
+    }
+
     @media (max-width: 900px) {
-      .topbar {
-        padding: 16px 16px 8px;
+      .app-shell {
+        grid-template-columns: 1fr;
       }
 
-      .topbar h1 {
-        font-size: 18px;
+      .sidebar {
+        display: none;
       }
 
-      .topbar p {
-        font-size: 13px;
+      .quick-actions {
+        left: 16px;
+        right: 16px;
       }
 
       .chatroom__messages,
@@ -290,32 +394,39 @@
       .chatroom .chatroom__input {
         padding: 10px 16px 8px !important;
       }
-
-      .quick-actions {
-        left: 16px;
-        right: 16px;
-        bottom: 70px;
-      }
     }
   </style>
 </head>
 <body>
   <div class="app-shell">
-    <div class="topbar">
-      <h1>Senatus Populusque Romanus</h1>
-      <p>Halt dein Maul und frag einfach.</p>
-    </div>
-
-    <div class="chat-section">
-      <div class="chat-container"></div>
-
-      <div class="quick-actions">
-        <button onclick="sendMsg('hello')">Hallo</button>
-        <button onclick="sendMsg('help')">Hilfe</button>
-        <button onclick="sendMsg('who are you')">Wer bist du?</button>
-        <button onclick="sendMsg('what can you do')">Was kannst du?</button>
+    <aside class="sidebar">
+      <h2>Vorherige Chats</h2>
+      <button class="new-chat-btn" onclick="resetChat()">+ Neuer Chat</button>
+      <div class="chat-history" id="chatHistory">
+        <button class="history-item">Salve</button>
+        <button class="history-item">Wer bist du?</button>
+        <button class="history-item">Was kannst du?</button>
       </div>
-    </div>
+    </aside>
+
+    <main class="main-panel">
+      <div class="chat-section">
+        <div class="chat-container"></div>
+
+        <div class="quick-actions">
+          <button onclick="sendMsg('hello')">Hallo</button>
+          <button onclick="sendMsg('help')">Hilfe</button>
+          <button onclick="sendMsg('who are you')">Wer bist du?</button>
+          <button onclick="sendMsg('what can you do')">Was kannst du?</button>
+        </div>
+
+        <div class="welcome-screen" id="welcomeScreen">
+          <h1>Senatus Populusque Romanus</h1>
+          <p>Halt dein Maul und frag einfach.</p>
+          <button onclick="hideWelcome()">Chat starten</button>
+        </div>
+      </div>
+    </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/dist/Chatroom.js"></script>
@@ -339,7 +450,17 @@
 
     chatroom.openChat();
 
+    function hideWelcome() {
+      document.getElementById("welcomeScreen").classList.add("hidden");
+    }
+
+    function resetChat() {
+      location.reload();
+    }
+
     function sendMsg(text) {
+      hideWelcome();
+
       const trySend = () => {
         const input =
           document.querySelector(".chatroom input") ||
@@ -362,6 +483,16 @@
 
       setTimeout(trySend, 250);
     }
+
+    document.addEventListener("click", function (e) {
+      if (
+        e.target.closest(".chatroom input[type='submit']") ||
+        e.target.closest(".chatroom button") ||
+        e.target.closest(".quick-actions button")
+      ) {
+        hideWelcome();
+      }
+    });
   </script>
 </body>
 </html>
