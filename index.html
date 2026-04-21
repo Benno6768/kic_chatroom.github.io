@@ -614,7 +614,6 @@
       host: "https://shiny-waddle-97ppvpwpxj6xfx6qj-5005.app.github.dev",
       title: "",
       container: document.querySelector(".chat-container"),
-      welcomeMessage: "Salve. Stelle eine Frage oder nutze die Schnellaktionen.",
       speechRecognition: "de-DE",
       voiceLang: "de-DE"
     });
@@ -627,7 +626,7 @@
         document.querySelector(".chatroom input:not([type='submit'])") ||
         document.querySelector(".chatroom textarea");
       if (input) {
-        input.placeholder = "Bitte stelle deine Fragen";
+        input.placeholder = "Bitte stelle deine Fragen1";
       } else {
         setTimeout(setPlaceholder, 200);
       }
