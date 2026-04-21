@@ -157,55 +157,56 @@
     }
 
     .chatroom .messages .message,
-    .chatroom .chatroom__messages .message {
-      width: 100% !important;
-      margin-bottom: 18px !important;
-    }
+.chatroom .chatroom__messages .message {
+  width: 100% !important;
+  margin-bottom: 18px !important;
+}
 
-    /* ── Bot-Nachrichten: kein Bubble, reiner Text ── */
-    .chatroom .messages .message--bot,
-    .chatroom .chatroom__messages .message--bot {
-      display: flex !important;
-      justify-content: flex-start !important;
-    }
+.chatroom .messages .message--bot,
+.chatroom .chatroom__messages .message--bot {
+  display: flex !important;
+  justify-content: flex-start !important;
+}
 
-    .chatroom .messages .message--bot .message__text,
-    .chatroom .chatroom__messages .message--bot .message__text {
-      background: transparent !important;
-      color: #e5e7eb !important;
-      border: none !important;
-      border-radius: 0 !important;
-      padding: 4px 0 !important;
-      max-width: min(820px, 88%) !important;
-      line-height: 1.6 !important;
-      font-size: 15px !important;
-      box-shadow: none !important;
-    }
+.chatroom .messages .message--user,
+.chatroom .chatroom__messages .message--user {
+  display: flex !important;
+  justify-content: flex-end !important;
+}
 
-    /* ── Nutzer-Nachrichten: Sprechblase, dynamische Höhe ── */
-    .chatroom .messages .message--user,
-    .chatroom .chatroom__messages .message--user {
-      display: flex !important;
-      justify-content: flex-end !important;
-    }
+.chatroom .messages .message--bot .message__text,
+.chatroom .chatroom__messages .message--bot .message__text {
+  display: inline-block !important;
+  width: auto !important;
+  background: rgba(24, 34, 53, 0.96) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 18px !important;
+  padding: 14px 18px !important;
+  max-width: 70% !important;
+  line-height: 1.5 !important;
+  font-size: 15px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
 
-    .chatroom .messages .message--user .message__text,
-    .chatroom .chatroom__messages .message--user .message__text {
-      background: #2563eb !important;
-      color: #ffffff !important;
-      border: none !important;
-      border-radius: 18px !important;
-      padding: 12px 18px !important;
-      max-width: min(820px, 72%) !important;
-      /* kein festes height – passt sich dem Text an */
-      height: auto !important;
-      min-height: unset !important;
-      line-height: 1.5 !important;
-      font-size: 15px !important;
-      white-space: pre-wrap !important;
-      word-break: break-word !important;
-    }
-
+.chatroom .messages .message--user .message__text,
+.chatroom .chatroom__messages .message--user .message__text {
+  display: inline-block !important;
+  width: auto !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 18px !important;
+  padding: 14px 18px !important;
+  max-width: 70% !important;
+  line-height: 1.5 !important;
+  font-size: 15px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
     .quick-actions {
       position: absolute;
       left: 50%;
