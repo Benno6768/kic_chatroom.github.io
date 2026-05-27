@@ -731,6 +731,51 @@
       cursor: pointer !important;
     }
 
+
+    /* ===== FINAL STARTSCREEN + QUICK-ACTION POSITION FIX ===== */
+    .welcome-screen {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 999999 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-direction: column !important;
+      background: linear-gradient(180deg, #0b1020 0%, #101827 100%) !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+
+    .welcome-screen.hidden {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    body.chat-locked .app-shell {
+      pointer-events: none !important;
+    }
+
+    body.chat-locked .welcome-screen,
+    body.chat-locked .welcome-screen * {
+      pointer-events: auto !important;
+    }
+
+    body.chat-locked .chat-container,
+    body.chat-locked .quick-actions {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    .quick-actions {
+      bottom: 86px !important;
+    }
+
+
   </style>
 </head>
 
@@ -918,7 +963,7 @@
 
       const sectionRect = chatSection.getBoundingClientRect();
       const inputRect = inputBar.getBoundingClientRect();
-      const gap = 12;
+      const gap = 4;
 
       quickActions.style.left = `${inputRect.left - sectionRect.left + inputRect.width / 2}px`;
       quickActions.style.width = `${inputRect.width}px`;
