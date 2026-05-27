@@ -643,20 +643,65 @@
       }
     }
 
+
+    /* ===== FINAL REQUEST: Sidebar ohne Verlauf + Quick-Actions im Sidebar-Box-Stil ===== */
+    .sidebar {
+      justify-content: flex-start !important;
+      padding-top: 18px !important;
+    }
+
+    .sidebar h2,
+    .chat-history {
+      display: none !important;
+    }
+
+    .new-chat-btn {
+      width: 100% !important;
+      min-height: 44px !important;
+    }
+
+    .quick-actions {
+      bottom: 94px !important;
+      width: min(760px, calc(100% - 48px)) !important;
+      justify-content: center !important;
+      align-items: center !important;
+      gap: 10px !important;
+    }
+
+    .quick-actions button {
+      width: auto !important;
+      min-width: 138px !important;
+      height: 42px !important;
+      padding: 10px 14px !important;
+      border-radius: 12px !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      background: rgba(31, 41, 55, 0.78) !important;
+      color: #f8fafc !important;
+      font-size: 14px !important;
+      line-height: 1.2 !important;
+      text-align: left !important;
+      box-shadow: none !important;
+      text-indent: 0 !important;
+      overflow: hidden !important;
+      white-space: nowrap !important;
+    }
+
+    .quick-actions button:hover {
+      background: rgba(55, 65, 81, 0.92) !important;
+      border-color: rgba(255, 255, 255, 0.16) !important;
+    }
+
+    .quick-actions button::before {
+      content: none !important;
+    }
+
   </style>
 </head>
 
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <h2>Vorherige Chats</h2>
       <button class="new-chat-btn" onclick="resetChat()">+ Neuer Chat</button>
-
-      <div class="chat-history" id="chatHistory">
-        <button class="history-item" onclick="sendMsg('salve')">Salve</button>
-        <button class="history-item" onclick="sendMsg('who are you')">Wer bist du?</button>
-        <button class="history-item" onclick="sendMsg('what can you do')">Was kannst du?</button>
-      </div>
     </aside>
 
     <main class="main-panel">
@@ -664,14 +709,14 @@
         <div class="chat-container"></div>
 
         <div class="quick-actions">
-          <button type="button" onclick="sendMsg('hello')">Hallo</button>
-          <button type="button" onclick="sendMsg('help')">Hilfe</button>
+          <button type="button" onclick="sendMsg('salve')">Salve</button>
           <button type="button" onclick="sendMsg('who are you')">Wer bist du?</button>
           <button type="button" onclick="sendMsg('what can you do')">Was kannst du?</button>
         </div>
 
         <div class="welcome-screen" id="welcomeScreen">
           <h1>STYX</h1>
+          <p>Halt dein Maul und frag einfach.</p>
           <button type="button" onclick="hideWelcome()">Chat starten</button>
         </div>
       </div>
