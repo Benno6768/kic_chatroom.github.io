@@ -480,6 +480,169 @@
         max-width: 88% !important;
       }
     }
+  
+
+    /* ===== FINAL FIXES: Pfeil, dynamische Bubbles, Quick-Actions ===== */
+
+    /* Nachrichtenbereich: genug Platz für Vorschläge + Eingabe */
+    .chatroom__messages,
+    .chatroom .messages,
+    .chatroom .chats,
+    .chatroom [class*="messages"] {
+      bottom: 165px !important;
+      padding-bottom: 24px !important;
+    }
+
+    /* Die 4 Vorschläge bleiben fest direkt über der Inputbox */
+    .quick-actions {
+      position: absolute !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      bottom: 94px !important;
+      width: min(760px, calc(100% - 48px)) !important;
+      display: flex !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      align-items: center !important;
+      gap: 10px !important;
+      z-index: 80 !important;
+      pointer-events: auto !important;
+    }
+
+    .quick-actions button {
+      width: auto !important;
+      min-width: auto !important;
+      height: auto !important;
+      min-height: 0 !important;
+      padding: 9px 15px !important;
+      border-radius: 999px !important;
+      font-size: 14px !important;
+      line-height: 1.2 !important;
+      color: #f8fafc !important;
+      background: rgba(31, 41, 55, 0.82) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      box-shadow: none !important;
+      text-indent: 0 !important;
+      overflow: visible !important;
+    }
+
+    .quick-actions button::before {
+      content: none !important;
+    }
+
+    /* Send-Button: echter Pfeil als Hintergrundbild, funktioniert auch bei input[type=submit] */
+    .chatroom input[type="submit"] {
+      background-color: #2563eb !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'/%3E%3Cpath d='M13 6l6 6-6 6'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: center !important;
+      background-size: 26px 26px !important;
+      color: transparent !important;
+      text-indent: -9999px !important;
+    }
+
+    .chatroom input[type="submit"]::before {
+      content: none !important;
+    }
+
+    /* Dynamische Sprechblasen: Zeile bleibt breit, Bubble selbst nur so breit wie Inhalt */
+    .chatroom .message,
+    .chatroom .message--bot,
+    .chatroom .message--user,
+    .chatroom .messages .message,
+    .chatroom .chatroom__messages .message,
+    .chatroom [class*="message"] {
+      width: 100% !important;
+      max-width: 100% !important;
+      display: flex !important;
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .chatroom .message--bot,
+    .chatroom [class*="bot"] {
+      justify-content: flex-start !important;
+      align-items: flex-start !important;
+    }
+
+    .chatroom .message--user,
+    .chatroom [class*="user"] {
+      justify-content: flex-end !important;
+      align-items: flex-start !important;
+    }
+
+    .chatroom .message__text,
+    .chatroom .message-text,
+    .chatroom .message_content,
+    .chatroom .message-content,
+    .chatroom .message .text,
+    .chatroom .message p {
+      display: inline-block !important;
+      flex: 0 1 auto !important;
+      width: auto !important;
+      min-width: 0 !important;
+      max-width: min(820px, 74%) !important;
+      height: auto !important;
+      min-height: 0 !important;
+      white-space: pre-wrap !important;
+      overflow-wrap: anywhere !important;
+      word-break: normal !important;
+      line-height: 1.5 !important;
+      margin: 0 !important;
+    }
+
+    .chatroom .message--bot .message__text,
+    .chatroom .message--bot .message-text,
+    .chatroom .message--bot .message_content,
+    .chatroom .message--bot .message-content,
+    .chatroom .message--bot p,
+    .chatroom [class*="bot"] .message__text,
+    .chatroom [class*="bot"] p {
+      background: rgba(24, 34, 53, 0.96) !important;
+      color: #f8fafc !important;
+      border: 1px solid rgba(255, 255, 255, 0.06) !important;
+      border-radius: 18px !important;
+      padding: 12px 18px !important;
+    }
+
+    .chatroom .message--user .message__text,
+    .chatroom .message--user .message-text,
+    .chatroom .message--user .message_content,
+    .chatroom .message--user .message-content,
+    .chatroom .message--user p,
+    .chatroom [class*="user"] .message__text,
+    .chatroom [class*="user"] p {
+      background: #2563eb !important;
+      color: #ffffff !important;
+      border: none !important;
+      border-radius: 18px !important;
+      padding: 12px 18px !important;
+    }
+
+    @media (max-width: 900px) {
+      .quick-actions {
+        bottom: 88px !important;
+        width: calc(100% - 24px) !important;
+      }
+
+      .chatroom__messages,
+      .chatroom .messages,
+      .chatroom .chats,
+      .chatroom [class*="messages"] {
+        bottom: 165px !important;
+      }
+
+      .chatroom .message__text,
+      .chatroom .message-text,
+      .chatroom .message_content,
+      .chatroom .message-content,
+      .chatroom .message .text,
+      .chatroom .message p {
+        max-width: 88% !important;
+      }
+    }
+
   </style>
 </head>
 
@@ -545,6 +708,7 @@
 
       if (input) {
         input.placeholder = "Bitte stelle deine Frage";
+        input.setAttribute("aria-label", "Bitte stelle deine Frage");
       } else {
         setTimeout(setPlaceholder, 200);
       }
@@ -637,6 +801,38 @@
         observer.observe(messages, { childList: true, subtree: true });
       }
     }, 700);
+
+
+    // Finale UI-Korrektur: Submit-Pfeil + dynamische Bubbles auch nach neuen Nachrichten erzwingen
+    function fixChatUi() {
+      const submitButton = document.querySelector('.chatroom input[type="submit"]');
+      if (submitButton) {
+        submitButton.value = "➜";
+        submitButton.setAttribute("aria-label", "Nachricht senden");
+        submitButton.title = "Nachricht senden";
+      }
+
+      const input =
+        document.querySelector(".chatroom input:not([type='submit'])") ||
+        document.querySelector(".chatroom textarea");
+      if (input) {
+        input.placeholder = "Bitte stelle deine Frage";
+      }
+
+      document.querySelectorAll(".chatroom .message__text, .chatroom .message-text, .chatroom .message-content, .chatroom .message_content, .chatroom .message p").forEach((bubble) => {
+        bubble.style.width = "fit-content";
+        bubble.style.maxWidth = window.innerWidth <= 900 ? "88%" : "74%";
+        bubble.style.display = "inline-block";
+        bubble.style.overflowWrap = "anywhere";
+        bubble.style.whiteSpace = "pre-wrap";
+      });
+    }
+
+    setInterval(fixChatUi, 500);
+    const observer = new MutationObserver(fixChatUi);
+    observer.observe(document.body, { childList: true, subtree: true });
+    setTimeout(fixChatUi, 300);
+
   </script>
 </body>
 </html>
