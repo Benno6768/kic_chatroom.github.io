@@ -785,9 +785,10 @@
       }
     });
 
-    const observer = new MutationObserver(() => {
+    const messagesObserver = new MutationObserver(() => {
       setPlaceholder();
       scrollMessagesToBottom();
+      fixChatUi();
     });
 
     setTimeout(() => {
@@ -798,7 +799,7 @@
         document.querySelector(".chatroom [class*='messages']");
 
       if (messages) {
-        observer.observe(messages, { childList: true, subtree: true });
+        messagesObserver.observe(messages, { childList: true, subtree: true });
       }
     }, 700);
 
@@ -828,9 +829,9 @@
       });
     }
 
-    setInterval(fixChatUi, 500);
-    const observer = new MutationObserver(fixChatUi);
-    observer.observe(document.body, { childList: true, subtree: true });
+    setInterval(fixChatUi, 1500);
+    const uiObserver = new MutationObserver(fixChatUi);
+    uiObserver.observe(document.body, { childList: true, subtree: true });
     setTimeout(fixChatUi, 300);
 
   </script>
