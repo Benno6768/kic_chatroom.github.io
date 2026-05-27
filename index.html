@@ -695,10 +695,46 @@
       content: none !important;
     }
 
+  
+
+    /* ===== START-GATE + AN INPUT GEBUNDENE QUICK-ACTIONS ===== */
+    .welcome-screen {
+      z-index: 20000 !important;
+      pointer-events: auto !important;
+    }
+
+    body.chat-locked .chat-container,
+    body.chat-locked .quick-actions {
+      pointer-events: none !important;
+    }
+
+    body.chat-locked .quick-actions {
+      opacity: 0 !important;
+      visibility: hidden !important;
+    }
+
+    body:not(.chat-locked) .quick-actions {
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    .quick-actions {
+      position: absolute !important;
+      z-index: 300 !important;
+      pointer-events: auto !important;
+      user-select: none !important;
+      transition: opacity 0.2s ease, visibility 0.2s ease !important;
+    }
+
+    .quick-actions button {
+      pointer-events: auto !important;
+      cursor: pointer !important;
+    }
+
   </style>
 </head>
 
-<body>
+<body class="chat-locked">
   <div class="app-shell">
     <aside class="sidebar">
       <button class="new-chat-btn" onclick="resetChat()">+ Neuer Chat</button>
@@ -708,15 +744,15 @@
       <div class="chat-section">
         <div class="chat-container"></div>
 
-        <div class="quick-actions">
-          <button type="button" onclick="sendMsg('salve')">Salve</button>
-          <button type="button" onclick="sendMsg('who are you')">Wer bist du?</button>
-          <button type="button" onclick="sendMsg('what can you do')">Was kannst du?</button>
+        <div class="quick-actions" id="quickActions">
+          <button type="button" data-message="salve">Salve</button>
+          <button type="button" data-message="who are you">Wer bist du?</button>
+          <button type="button" data-message="what can you do">Was kannst du?</button>
         </div>
 
         <div class="welcome-screen" id="welcomeScreen">
           <h1>STYX</h1>
-          <button type="button" onclick="hideWelcome()">Chat starten</button>
+          <button type="button" onclick="startChat()">Chat starten</button>
         </div>
       </div>
     </main>
@@ -766,12 +802,28 @@
       }
     }
 
+    function startChat() {
+      document.body.classList.remove("chat-locked");
+      hideWelcome();
+      setPlaceholder();
+      bindQuickActions();
+      syncQuickActionsToInput();
+      setTimeout(syncQuickActionsToInput, 200);
+
+      const input = getChatInput();
+      if (input) {
+        setTimeout(() => input.focus(), 120);
+      }
+    }
+
     function resetChat() {
       location.reload();
     }
 
     function sendMsg(text) {
-      hideWelcome();
+      if (document.body.classList.contains("chat-locked")) {
+        return;
+      }
 
       const trySend = () => {
         const input = getChatInput();
@@ -818,7 +870,67 @@
       }
     }
 
+
+
+
+
+    function bindQuickActions() {
+      const quickActions = document.getElementById("quickActions");
+      if (!quickActions || quickActions.dataset.bound === "true") {
+        return;
+      }
+
+      quickActions.dataset.bound = "true";
+
+      quickActions.addEventListener("pointerdown", function (e) {
+        const button = e.target.closest("button[data-message]");
+        if (!button) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (document.body.classList.contains("chat-locked")) {
+          return;
+        }
+
+        sendMsg(button.dataset.message);
+      }, true);
+
+      quickActions.addEventListener("click", function (e) {
+        const button = e.target.closest("button[data-message]");
+        if (!button) return;
+        e.preventDefault();
+        e.stopPropagation();
+      }, true);
+    }
+
+    function syncQuickActionsToInput() {
+      const quickActions = document.getElementById("quickActions");
+      const chatSection = document.querySelector(".chat-section");
+      const inputBar =
+        document.querySelector(".chatroom form") ||
+        document.querySelector(".chatroom .chatroom__input") ||
+        document.querySelector(".chatroom .input") ||
+        document.querySelector(".chatroom [class*='input']");
+
+      if (!quickActions || !chatSection || !inputBar) {
+        return;
+      }
+
+      const sectionRect = chatSection.getBoundingClientRect();
+      const inputRect = inputBar.getBoundingClientRect();
+      const gap = 12;
+
+      quickActions.style.left = `${inputRect.left - sectionRect.left + inputRect.width / 2}px`;
+      quickActions.style.width = `${inputRect.width}px`;
+      quickActions.style.bottom = `${sectionRect.bottom - inputRect.top + gap}px`;
+      quickActions.style.transform = "translateX(-50%)";
+    }
+
     document.addEventListener("click", function (e) {
+      if (document.body.classList.contains("chat-locked")) {
+        return;
+      }
+
       if (
         e.target.closest(".chatroom input[type='submit']") ||
         e.target.closest(".chatroom button") ||
@@ -831,6 +943,7 @@
     const messagesObserver = new MutationObserver(() => {
       setPlaceholder();
       scrollMessagesToBottom();
+      syncQuickActionsToInput();
       fixChatUi();
     });
 
@@ -863,6 +976,9 @@
         input.placeholder = "Bitte stelle deine Frage";
       }
 
+      bindQuickActions();
+      syncQuickActionsToInput();
+
       document.querySelectorAll(".chatroom .message__text, .chatroom .message-text, .chatroom .message-content, .chatroom .message_content, .chatroom .message p").forEach((bubble) => {
         bubble.style.width = "fit-content";
         bubble.style.maxWidth = window.innerWidth <= 900 ? "88%" : "74%";
@@ -872,10 +988,19 @@
       });
     }
 
-    setInterval(fixChatUi, 1500);
+    setInterval(() => { fixChatUi(); syncQuickActionsToInput(); }, 1500);
     const uiObserver = new MutationObserver(fixChatUi);
     uiObserver.observe(document.body, { childList: true, subtree: true });
     setTimeout(fixChatUi, 300);
+
+
+    window.addEventListener("resize", syncQuickActionsToInput);
+    window.addEventListener("load", () => {
+      setPlaceholder();
+      bindQuickActions();
+      syncQuickActionsToInput();
+      fixChatUi();
+    });
 
   </script>
 </body>
