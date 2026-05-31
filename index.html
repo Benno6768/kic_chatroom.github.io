@@ -167,18 +167,20 @@
 
     /* ── MESSAGE ROWS ── */
     .chatroom .message,
-    .chatroom [class*="message"] {
+    .chatroom .chat-message {
       width: 100% !important; max-width: 100% !important;
       display: flex !important;
       background: transparent !important;
       background-color: transparent !important;
       border: 0 !important; box-shadow: none !important;
-      margin: 0 0 2px !important; padding: 0 !important;
+      margin: 0 0 8px !important; padding: 0 !important;
     }
     .chatroom .message--bot,
-    .chatroom [class*="--bot"] { justify-content: flex-start !important; align-items: flex-start !important; }
+    .chatroom .chat-message.bot,
+    .chatroom .chat-message.bot-message { justify-content: flex-start !important; align-items: flex-start !important; }
     .chatroom .message--user,
-    .chatroom [class*="--user"] { justify-content: flex-end !important; align-items: flex-start !important; }
+    .chatroom .chat-message.user,
+    .chatroom .chat-message.user-message { justify-content: flex-end !important; align-items: flex-start !important; }
 
     /* ── BUBBLES — the core fix ── */
     /*
@@ -296,18 +298,33 @@
     .chatroom input[type="submit"]::before { content: none !important; }
 
     /* Mic button */
-    .chatroom button:not(.quick-actions button) {
+    .styx-mic-btn {
       flex: 0 0 auto !important;
-      width: 54px !important; min-width: 54px !important; height: 54px !important;
-      border: 1px solid rgba(201,168,76,.17) !important; border-radius: 14px !important;
-      background-color: rgba(6,11,24,.97) !important; background-image: none !important;
-      color: transparent !important; cursor: pointer !important;
-      position: relative !important; font-size: 0 !important; overflow: hidden !important;
+      width: 54px !important;
+      min-width: 54px !important;
+      height: 54px !important;
+      border: 1px solid rgba(201,168,76,.17) !important;
+      border-radius: 14px !important;
+      background-color: rgba(6,11,24,.97) !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e8e6e0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Cpath d='M12 19v3'/%3E%3Cpath d='M8 22h8'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: center !important;
+      background-size: 23px !important;
+      color: transparent !important;
+      font-size: 0 !important;
+      cursor: pointer !important;
+      box-shadow: 0 4px 18px rgba(0,0,0,.28) !important;
+      transition: transform .15s, border-color .15s, box-shadow .15s !important;
     }
-    .chatroom button:not(.quick-actions button)::before {
-      content: "🎤"; font-size: 19px;
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
+    .styx-mic-btn::before { content: none !important; }
+    .styx-mic-btn:hover {
+      transform: scale(1.06) !important;
+      border-color: rgba(201,168,76,.36) !important;
+      box-shadow: 0 6px 24px rgba(201,168,76,.18) !important;
+    }
+    .styx-mic-btn.is-recording {
+      border-color: rgba(220,80,80,.75) !important;
+      box-shadow: 0 0 22px rgba(220,80,80,.38) !important;
     }
 
     /* ── QUICK-ACTIONS ── */
@@ -645,144 +662,206 @@
       qa.style.transform = "translateX(-50%)";
     }
 
-    /* ── FIX BUBBLES — aggressive inline-style override + hide timestamps ── */
-    function nukeBubbleInlineStyles(el) {
-      const row = el.closest(".message, [class*='message--']");
-      const isUser = row && (row.classList.contains("message--user") || row.className.includes("--user"));
+    /* ── BUBBLE + MICROPHONE FIX ── */
+    function getMsgArea() {
+      return document.querySelector(
+        ".chatroom__messages, .chatroom .messages, .chatroom .chats, .chatroom [class*='messages']"
+      );
+    }
 
-      el.style.setProperty("display",       "inline-block", "important");
-      el.style.setProperty("width",         "auto",         "important");
-      el.style.setProperty("max-width",     window.innerWidth<=900 ? "86%" : "min(680px,70%)", "important");
-      el.style.setProperty("height",        "auto",         "important");
-      el.style.setProperty("min-height",    "0",            "important");
-      el.style.setProperty("white-space",   "pre-wrap",     "important");
-      el.style.setProperty("overflow-wrap", "anywhere",     "important");
-      el.style.setProperty("word-break",    "normal",       "important");
-      el.style.setProperty("font-size",     "15.5px",       "important");
-      el.style.setProperty("line-height",   "1.65",         "important");
+    function isUserMessage(row) {
+      const cls = (row.className || "").toString().toLowerCase();
+      return (
+        cls.includes("user") ||
+        cls.includes("human") ||
+        cls.includes("client") ||
+        cls.includes("from-me") ||
+        cls.includes("sent")
+      );
+    }
 
-      if(isUser) {
-        el.style.setProperty("background-color", "#2a5bbf",                        "important");
-        el.style.setProperty("color",            "#ffffff",                         "important");
-        el.style.setProperty("border",           "none",                            "important");
-        el.style.setProperty("border-radius",    "20px 20px 5px 20px",             "important");
-        el.style.setProperty("padding",          "12px 17px",                      "important");
-        el.style.setProperty("box-shadow",       "0 3px 16px rgba(42,91,191,.35)", "important");
-      } else {
-        el.style.setProperty("background-color", "#0f1a30",                              "important");
-        el.style.setProperty("color",            "#e8e6e0",                              "important");
-        el.style.setProperty("border",           "1px solid rgba(201,168,76,.15)",       "important");
-        el.style.setProperty("border-radius",    "20px 20px 20px 5px",                  "important");
-        el.style.setProperty("padding",          "12px 17px",                           "important");
-        el.style.setProperty("box-shadow",       "0 3px 16px rgba(0,0,0,.35)",          "important");
-      }
+    function isBotMessage(row) {
+      const cls = (row.className || "").toString().toLowerCase();
+      return (
+        cls.includes("bot") ||
+        cls.includes("agent") ||
+        cls.includes("response") ||
+        cls.includes("received")
+      );
+    }
 
-      if(row) {
-        row.style.setProperty("background",       "transparent", "important");
+    function findBubble(row) {
+      return (
+        row.querySelector(".message__text") ||
+        row.querySelector(".message-text") ||
+        row.querySelector(".message_content") ||
+        row.querySelector(".message-content") ||
+        row.querySelector(".message-body") ||
+        row.querySelector(".text") ||
+        row.querySelector("p") ||
+        row.querySelector("span") ||
+        row
+      );
+    }
+
+    function fixChatMessages() {
+      const area = getMsgArea();
+      if (!area) return;
+
+      area.style.setProperty("position", "absolute", "important");
+      area.style.setProperty("top", "0", "important");
+      area.style.setProperty("left", "0", "important");
+      area.style.setProperty("right", "0", "important");
+      area.style.setProperty("bottom", "136px", "important");
+      area.style.setProperty("overflow-y", "auto", "important");
+      area.style.setProperty("overflow-x", "hidden", "important");
+      area.style.setProperty("display", "flex", "important");
+      area.style.setProperty("flex-direction", "column", "important");
+      area.style.setProperty("gap", "10px", "important");
+      area.style.setProperty("padding", "28px 36px 20px", "important");
+      area.style.setProperty("background", "transparent", "important");
+
+      const rows = area.querySelectorAll(".message, .chat-message");
+
+      rows.forEach(row => {
+        const text = row.textContent.trim();
+        if (!text) return;
+
+        const user = isUserMessage(row);
+        const bot = isBotMessage(row);
+        const bubble = findBubble(row);
+
+        row.style.setProperty("display", "flex", "important");
+        row.style.setProperty("width", "100%", "important");
+        row.style.setProperty("max-width", "100%", "important");
+        row.style.setProperty("background", "transparent", "important");
         row.style.setProperty("background-color", "transparent", "important");
-        row.style.setProperty("border",           "none",        "important");
-        row.style.setProperty("box-shadow",       "none",        "important");
-        row.style.setProperty("width",            "100%",        "important");
-        row.style.setProperty("display",          "flex",        "important");
+        row.style.setProperty("border", "none", "important");
+        row.style.setProperty("box-shadow", "none", "important");
+        row.style.setProperty("padding", "0", "important");
+        row.style.setProperty("margin", "0 0 8px 0", "important");
+        row.style.setProperty("justify-content", user ? "flex-end" : "flex-start", "important");
+        row.style.setProperty("align-items", "flex-start", "important");
+
+        bubble.style.setProperty("display", "inline-block", "important");
+        bubble.style.setProperty("width", "fit-content", "important");
+        bubble.style.setProperty("max-width", window.innerWidth <= 900 ? "86%" : "min(680px, 70%)", "important");
+        bubble.style.setProperty("min-width", "0", "important");
+        bubble.style.setProperty("height", "auto", "important");
+        bubble.style.setProperty("min-height", "0", "important");
+        bubble.style.setProperty("white-space", "pre-wrap", "important");
+        bubble.style.setProperty("overflow-wrap", "anywhere", "important");
+        bubble.style.setProperty("word-break", "normal", "important");
+        bubble.style.setProperty("line-height", "1.55", "important");
+        bubble.style.setProperty("font-size", "16px", "important");
+        bubble.style.setProperty("font-family", "var(--fb)", "important");
+        bubble.style.setProperty("padding", "12px 17px", "important");
+        bubble.style.setProperty("margin", "0", "important");
+
+        if (user) {
+          bubble.style.setProperty("background", "linear-gradient(135deg, #2f6de0, #244fae)", "important");
+          bubble.style.setProperty("color", "#ffffff", "important");
+          bubble.style.setProperty("border", "1px solid rgba(255,255,255,.10)", "important");
+          bubble.style.setProperty("border-radius", "20px 20px 5px 20px", "important");
+          bubble.style.setProperty("box-shadow", "0 4px 18px rgba(47,109,224,.32)", "important");
+        } else {
+          bubble.style.setProperty("background", "rgba(15, 26, 48, .92)", "important");
+          bubble.style.setProperty("color", "var(--text)", "important");
+          bubble.style.setProperty("border", "1px solid rgba(201,168,76,.16)", "important");
+          bubble.style.setProperty("border-radius", "20px 20px 20px 5px", "important");
+          bubble.style.setProperty("box-shadow", "0 4px 18px rgba(0,0,0,.32)", "important");
+        }
+      });
+
+      document.querySelectorAll(
+        ".chatroom .message__timestamp, .chatroom [class*='timestamp'], .chatroom .message__meta, .chatroom [class*='__meta'], .chatroom small"
+      ).forEach(el => {
+        el.style.setProperty("display", "none", "important");
+      });
+    }
+
+    function fixMicButton() {
+      const form = document.querySelector(".chatroom form, .chatroom .chatroom__input, .chatroom .input");
+      if (!form) return;
+
+      let mic = form.querySelector(".styx-mic-btn");
+
+      if (!mic) {
+        mic = document.createElement("button");
+        mic.type = "button";
+        mic.className = "styx-mic-btn";
+        mic.setAttribute("aria-label", "Spracheingabe starten");
+        mic.setAttribute("title", "Spracheingabe starten");
+
+        const submit = form.querySelector("input[type='submit']");
+        if (submit) submit.insertAdjacentElement("afterend", mic);
+        else form.appendChild(mic);
+
+        mic.addEventListener("click", () => {
+          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+          if (!SpeechRecognition) {
+            alert("Spracheingabe wird in diesem Browser nicht unterstützt. Nutze am besten Google Chrome.");
+            return;
+          }
+
+          const recognition = new SpeechRecognition();
+          recognition.lang = "de-DE";
+          recognition.interimResults = false;
+          recognition.maxAlternatives = 1;
+
+          mic.classList.add("is-recording");
+
+          recognition.onresult = event => {
+            const text = event.results[0][0].transcript;
+            const input = getInput();
+
+            if (input) {
+              input.value = text;
+              input.dispatchEvent(new Event("input", { bubbles: true }));
+              input.dispatchEvent(new Event("change", { bubbles: true }));
+              input.focus();
+            }
+          };
+
+          recognition.onend = () => mic.classList.remove("is-recording");
+          recognition.onerror = () => mic.classList.remove("is-recording");
+          recognition.start();
+        });
       }
     }
 
-    function fixBubbles() {
-      // Inject persistent override stylesheet once
-      if(!document.getElementById("bubbleFix")) {
-        const s = document.createElement("style");
-        s.id = "bubbleFix";
-        s.textContent = `
-          .chatroom .message,
-          .chatroom [class*="message--"] {
-            background: transparent !important;
-            background-color: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            width: 100% !important;
-            display: flex !important;
-          }
-          .chatroom .message--user,
-          .chatroom [class*="--user"] { justify-content: flex-end !important; }
-          .chatroom .message--bot,
-          .chatroom [class*="--bot"]  { justify-content: flex-start !important; }
-
-          .chatroom .message__text,
-          .chatroom .message-text,
-          .chatroom .message_content,
-          .chatroom .message-content {
-            display: inline-block !important;
-            width: auto !important;
-            max-width: min(680px, 70%) !important;
-            height: auto !important;
-            white-space: pre-wrap !important;
-            overflow-wrap: anywhere !important;
-          }
-          /* Hide all timestamp / meta divs */
-          .chatroom .message__timestamp,
-          .chatroom [class*="timestamp"],
-          .chatroom .message__meta,
-          .chatroom [class*="__meta"],
-          .chatroom small { display: none !important; }
-        `;
-        document.head.appendChild(s);
-      }
-
-      // Hard-override every bubble's inline styles
-      document.querySelectorAll(
-        ".chatroom .message__text, .chatroom .message-text, " +
-        ".chatroom .message_content, .chatroom .message-content"
-      ).forEach(nukeBubbleInlineStyles);
-
-      // Hide "less than a minute" standalone nodes (text-only divs between messages)
-      const msgArea = document.querySelector(".chatroom__messages, .chatroom .messages, .chatroom .chats");
-      if(msgArea) {
-        Array.from(msgArea.children).forEach(node => {
-          const cls = node.className || "";
-          // Keep only message rows and the input form
-          if(!cls.includes("message") && node.tagName !== "FORM") {
-            node.style.setProperty("display", "none", "important");
-          }
-        });
-      }
-
+    function fixChatUI() {
+      fixChatMessages();
+      fixMicButton();
       setPlaceholder();
       bindQuickActions();
       syncQA();
     }
 
-    /* ── OBSERVERS ── */
-    // Watch for new nodes and immediately fix them
-    new MutationObserver((mutations)=>{
-      let needsFix = false;
-      mutations.forEach(m => {
-        m.addedNodes.forEach(node => {
-          if(node.nodeType !== 1) return;
-          // Immediately nuke any new bubble inline styles
-          const bubbles = node.querySelectorAll
-            ? node.querySelectorAll(".message__text,.message-text,.message_content,.message-content")
-            : [];
-          bubbles.forEach(nukeBubbleInlineStyles);
-          if(node.classList && (node.className.includes("message__text") || node.className.includes("message-text"))) {
-            nukeBubbleInlineStyles(node);
-          }
-          needsFix = true;
-        });
-      });
-      if(needsFix) { fixBubbles(); scrollBottom(); }
-    }).observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:["style"]});
+    const uiObserver = new MutationObserver(() => {
+      fixChatUI();
+      scrollBottom();
+    });
 
-    setInterval(()=>{ fixBubbles(); syncQA(); }, 800);
+    uiObserver.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    setInterval(fixChatUI, 500);
+    setTimeout(fixChatUI, 300);
+    setTimeout(fixChatUI, 1000);
 
     document.addEventListener("click", e=>{
       if(document.body.classList.contains("chat-locked")) return;
       if(e.target.closest(".chatroom input[type='submit'],.chatroom button,.quick-actions button")) hideWelcome();
     });
 
-    window.addEventListener("resize", ()=>{ syncQA(); fixBubbles(); });
-    window.addEventListener("load", ()=>{ setPlaceholder(); bindQuickActions(); syncQA(); fixBubbles(); });
-    setTimeout(fixBubbles, 300);
-    setTimeout(fixBubbles, 1000);
+    window.addEventListener("resize", ()=>{ syncQA(); fixChatUI(); });
+    window.addEventListener("load", ()=>{ setPlaceholder(); bindQuickActions(); syncQA(); fixChatUI(); });
+    setTimeout(fixChatUI, 300);
+    setTimeout(fixChatUI, 1000);
   </script>
 </body>
 </html>
