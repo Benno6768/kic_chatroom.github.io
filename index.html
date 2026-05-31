@@ -329,11 +329,10 @@
 
     /* ── QUICK-ACTIONS ── */
     .quick-actions {
-      position: absolute !important; z-index: 60 !important;
-      display: flex !important; flex-wrap: wrap !important;
-      justify-content: center !important; align-items: center !important;
-      gap: 8px !important; pointer-events: auto !important;
-      transition: opacity .25s, visibility .25s !important;
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
     }
     .quick-actions button {
       height: 34px !important; padding: 0 15px !important;
@@ -522,11 +521,6 @@
       <div class="chat-section" id="chatSection">
         <div class="chat-container"></div>
 
-        <div class="quick-actions" id="quickActions">
-          <button type="button" data-message="salve">Salve</button>
-          <button type="button" data-message="who are you">Wer bist du?</button>
-          <button type="button" data-message="what can you do">Was kannst du?</button>
-        </div>
 
         <!-- WELCOME SCREEN: only "STYX" + rotating Greek symbol -->
         <div class="welcome-screen" id="welcomeScreen">
@@ -654,6 +648,27 @@
     const getInput  = () => document.querySelector(".chatroom input:not([type='submit'])") || document.querySelector(".chatroom textarea");
     const getSubmit = () => document.querySelector(".chatroom input[type='submit']");
 
+    /* Merkt sich wirklich vom Nutzer gesendete Texte.
+       Dadurch werden mehrteilige Bot-Antworten nicht mehr versehentlich als User-Fragen blau dargestellt. */
+    const styxUserTexts = [];
+
+    function normalizeMsgText(text) {
+      return (text || "")
+        .replace(/less than a minute/gi, "")
+        .replace(/\bminute[s]? ago\b/gi, "")
+        .replace(/\bnow\b/gi, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+    }
+
+    function rememberUserText(text) {
+      const normalized = normalizeMsgText(text);
+      if (!normalized) return;
+      if (!styxUserTexts.includes(normalized)) styxUserTexts.push(normalized);
+      if (styxUserTexts.length > 80) styxUserTexts.shift();
+    }
+
     function setPlaceholder() {
       const i = getInput();
       if(i) { i.placeholder="Bitte stelle deine Frage"; i.setAttribute("aria-label","Bitte stelle deine Frage"); }
@@ -669,9 +684,6 @@
       document.body.classList.remove("chat-locked");
       hideWelcome();
       setPlaceholder();
-      bindQuickActions();
-      syncQA();
-      setTimeout(syncQA, 200);
       const i = getInput();
       if(i) setTimeout(()=>i.focus(), 120);
     }
@@ -686,6 +698,7 @@
     /* ── SEND ── */
     function sendMsg(text) {
       if(document.body.classList.contains("chat-locked")) return;
+      rememberUserText(text);
       const trySend = () => {
         const inp = getInput(), btn = getSubmit();
         if(!inp||!btn) { setTimeout(trySend,150); return; }
@@ -759,12 +772,37 @@
 
     function isUserMessage(row, index) {
       const cls = (row.className || "").toString().toLowerCase();
-      const attr = ((row.getAttribute("data-author") || "") + " " + (row.getAttribute("data-sender") || "") + " " + (row.getAttribute("aria-label") || "")).toLowerCase();
-      if (cls.includes("user") || cls.includes("human") || cls.includes("client") || cls.includes("from-me") || cls.includes("sent") || attr.includes("user") || attr.includes("me")) return true;
-      if (cls.includes("bot") || cls.includes("agent") || cls.includes("response") || cls.includes("received") || attr.includes("bot")) return false;
+      const attr = (
+        (row.getAttribute("data-author") || "") + " " +
+        (row.getAttribute("data-sender") || "") + " " +
+        (row.getAttribute("aria-label") || "") + " " +
+        (row.getAttribute("data-role") || "")
+      ).toLowerCase();
 
-      /* Fallback für die Chatroom-Bibliothek: sichtbare Nachrichten wechseln normalerweise User/Bot. */
-      return index % 2 === 0;
+      if (row.dataset.styxRole === "user") return true;
+      if (row.dataset.styxRole === "bot") return false;
+
+      if (cls.includes("user") || cls.includes("human") || cls.includes("client") || cls.includes("from-me") || cls.includes("sent") || attr.includes("user") || attr.includes("me")) {
+        row.dataset.styxRole = "user";
+        return true;
+      }
+
+      if (cls.includes("bot") || cls.includes("agent") || cls.includes("response") || cls.includes("received") || attr.includes("bot") || attr.includes("assistant")) {
+        row.dataset.styxRole = "bot";
+        return false;
+      }
+
+      const rowText = normalizeMsgText(row.textContent);
+      const wasSentByUser = styxUserTexts.some(t => t === rowText);
+      if (wasSentByUser) {
+        row.dataset.styxRole = "user";
+        return true;
+      }
+
+      /* Sicherer Fallback: Unbekannte/mehteilige Zeilen sind Bot-Antworten.
+         Nicht mehr abwechselnd User/Bot, weil lange Bot-Antworten sonst blau werden. */
+      row.dataset.styxRole = "bot";
+      return false;
     }
 
     function normalizeBubble(row) {
@@ -946,12 +984,36 @@
       }
     }
 
+    function bindUserTextCapture() {
+      const form = document.querySelector(".chatroom form, .chatroom .chatroom__input, .chatroom .input");
+      const input = getInput();
+      const submit = getSubmit();
+
+      if (submit && !submit.dataset.styxCaptureBound) {
+        submit.dataset.styxCaptureBound = "true";
+        ["pointerdown", "mousedown", "click"].forEach(evt => {
+          submit.addEventListener(evt, () => rememberUserText(getInput()?.value), true);
+        });
+      }
+
+      if (form && !form.dataset.styxCaptureBound) {
+        form.dataset.styxCaptureBound = "true";
+        form.addEventListener("submit", () => rememberUserText(getInput()?.value), true);
+      }
+
+      if (input && !input.dataset.styxCaptureBound) {
+        input.dataset.styxCaptureBound = "true";
+        input.addEventListener("keydown", e => {
+          if (e.key === "Enter" && !e.shiftKey) rememberUserText(input.value);
+        }, true);
+      }
+    }
+
     function fixChatUI() {
       fixChatMessages();
       fixMicButton();
+      bindUserTextCapture();
       setPlaceholder();
-      bindQuickActions();
-      syncQA();
     }
 
     const uiObserver = new MutationObserver(() => {
@@ -970,11 +1032,11 @@
 
     document.addEventListener("click", e=>{
       if(document.body.classList.contains("chat-locked")) return;
-      if(e.target.closest(".chatroom input[type='submit'],.chatroom button,.quick-actions button")) hideWelcome();
+      if(e.target.closest(".chatroom input[type='submit'],.chatroom button")) hideWelcome();
     });
 
     window.addEventListener("resize", ()=>{ syncQA(); fixChatUI(); });
-    window.addEventListener("load", ()=>{ setPlaceholder(); bindQuickActions(); syncQA(); fixChatUI(); });
+    window.addEventListener("load", ()=>{ setPlaceholder(); fixChatUI(); });
     setTimeout(fixChatUI, 300);
     setTimeout(fixChatUI, 1000);
   </script>
