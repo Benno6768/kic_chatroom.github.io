@@ -433,6 +433,75 @@
     @media (prefers-reduced-motion: reduce) {
       .bg-glow, .bg-grid, .welcome-symbol svg, .ring { animation: none !important; }
     }
+
+
+    /* ── FINAL OVERRIDE: Chat bubbles must never be full-width/white ── */
+    .chatroom .chatroom__messages > *,
+    .chatroom .messages > *,
+    .chatroom .chats > * {
+      box-sizing: border-box !important;
+    }
+
+    .chatroom .styx-msg-row {
+      width: 100% !important;
+      max-width: 100% !important;
+      display: flex !important;
+      background: transparent !important;
+      background-color: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0 0 10px 0 !important;
+    }
+
+    .chatroom .styx-msg-row.styx-user {
+      justify-content: flex-end !important;
+    }
+
+    .chatroom .styx-msg-row.styx-bot {
+      justify-content: flex-start !important;
+    }
+
+    .chatroom .styx-bubble {
+      display: inline-block !important;
+      width: fit-content !important;
+      max-width: min(680px, 70%) !important;
+      min-width: 0 !important;
+      height: auto !important;
+      min-height: 0 !important;
+      padding: 12px 17px !important;
+      margin: 0 !important;
+      white-space: pre-wrap !important;
+      overflow-wrap: anywhere !important;
+      word-break: normal !important;
+      line-height: 1.55 !important;
+      font-size: 16px !important;
+      font-family: var(--fb) !important;
+      color: var(--text) !important;
+      background: rgba(15, 26, 48, .92) !important;
+      border: 1px solid rgba(201,168,76,.16) !important;
+      border-radius: 20px 20px 20px 5px !important;
+      box-shadow: 0 4px 18px rgba(0,0,0,.32) !important;
+      text-indent: 0 !important;
+    }
+
+    .chatroom .styx-user .styx-bubble {
+      color: #fff !important;
+      background: linear-gradient(135deg, #2f6de0, #244fae) !important;
+      border: 1px solid rgba(255,255,255,.10) !important;
+      border-radius: 20px 20px 5px 20px !important;
+      box-shadow: 0 4px 18px rgba(47,109,224,.32) !important;
+    }
+
+    .chatroom .styx-hide,
+    .chatroom .styx-hidden-mic {
+      display: none !important;
+    }
+
+    @media (max-width: 900px) {
+      .chatroom .styx-bubble { max-width: 86% !important; }
+    }
+
   </style>
 </head>
 
@@ -669,39 +738,105 @@
       );
     }
 
-    function isUserMessage(row) {
-      const cls = (row.className || "").toString().toLowerCase();
-      return (
-        cls.includes("user") ||
-        cls.includes("human") ||
-        cls.includes("client") ||
-        cls.includes("from-me") ||
-        cls.includes("sent")
-      );
+    function getMessageRows(area) {
+      const direct = Array.from(area.children || []);
+      const rows = direct.filter(el => {
+        if (!(el instanceof HTMLElement)) return false;
+        const text = (el.textContent || "").trim();
+        if (!text) return false;
+        const low = text.toLowerCase();
+        if (low.includes("less than") || low.includes("minute") || low.includes("ago")) return false;
+        if (el.matches("form, input, textarea, button, script, style")) return false;
+        return true;
+      });
+
+      if (rows.length) return rows;
+      return Array.from(area.querySelectorAll(".message, .chat-message, [class*='message']")).filter(el => {
+        const text = (el.textContent || "").trim();
+        return text && !text.toLowerCase().includes("less than");
+      });
     }
 
-    function isBotMessage(row) {
+    function isUserMessage(row, index) {
       const cls = (row.className || "").toString().toLowerCase();
-      return (
-        cls.includes("bot") ||
-        cls.includes("agent") ||
-        cls.includes("response") ||
-        cls.includes("received")
-      );
+      const attr = ((row.getAttribute("data-author") || "") + " " + (row.getAttribute("data-sender") || "") + " " + (row.getAttribute("aria-label") || "")).toLowerCase();
+      if (cls.includes("user") || cls.includes("human") || cls.includes("client") || cls.includes("from-me") || cls.includes("sent") || attr.includes("user") || attr.includes("me")) return true;
+      if (cls.includes("bot") || cls.includes("agent") || cls.includes("response") || cls.includes("received") || attr.includes("bot")) return false;
+
+      /* Fallback für die Chatroom-Bibliothek: sichtbare Nachrichten wechseln normalerweise User/Bot. */
+      return index % 2 === 0;
     }
 
-    function findBubble(row) {
-      return (
-        row.querySelector(".message__text") ||
-        row.querySelector(".message-text") ||
-        row.querySelector(".message_content") ||
-        row.querySelector(".message-content") ||
-        row.querySelector(".message-body") ||
-        row.querySelector(".text") ||
-        row.querySelector("p") ||
-        row.querySelector("span") ||
-        row
-      );
+    function normalizeBubble(row) {
+      let bubble = row.querySelector(":scope > .styx-bubble");
+      if (bubble) return bubble;
+
+      const existing = row.querySelector(":scope > .message__text, :scope > .message-text, :scope > .message_content, :scope > .message-content, :scope > .message-body, :scope > p, :scope > span");
+      if (existing) {
+        existing.classList.add("styx-bubble");
+        return existing;
+      }
+
+      bubble = document.createElement("div");
+      bubble.className = "styx-bubble";
+
+      const nodes = Array.from(row.childNodes);
+      nodes.forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) return;
+        bubble.appendChild(node);
+      });
+      row.appendChild(bubble);
+      return bubble;
+    }
+
+    function applyBubbleStyles(row, bubble, user) {
+      row.classList.add("styx-msg-row");
+      row.classList.toggle("styx-user", user);
+      row.classList.toggle("styx-bot", !user);
+
+      row.style.setProperty("display", "flex", "important");
+      row.style.setProperty("width", "100%", "important");
+      row.style.setProperty("max-width", "100%", "important");
+      row.style.setProperty("background", "transparent", "important");
+      row.style.setProperty("background-color", "transparent", "important");
+      row.style.setProperty("border", "none", "important");
+      row.style.setProperty("box-shadow", "none", "important");
+      row.style.setProperty("padding", "0", "important");
+      row.style.setProperty("margin", "0 0 10px 0", "important");
+      row.style.setProperty("justify-content", user ? "flex-end" : "flex-start", "important");
+      row.style.setProperty("align-items", "flex-start", "important");
+
+      bubble.style.setProperty("display", "inline-block", "important");
+      bubble.style.setProperty("width", "fit-content", "important");
+      bubble.style.setProperty("max-width", window.innerWidth <= 900 ? "86%" : "min(680px, 70%)", "important");
+      bubble.style.setProperty("min-width", "0", "important");
+      bubble.style.setProperty("height", "auto", "important");
+      bubble.style.setProperty("min-height", "0", "important");
+      bubble.style.setProperty("white-space", "pre-wrap", "important");
+      bubble.style.setProperty("overflow-wrap", "anywhere", "important");
+      bubble.style.setProperty("word-break", "normal", "important");
+      bubble.style.setProperty("line-height", "1.55", "important");
+      bubble.style.setProperty("font-size", "16px", "important");
+      bubble.style.setProperty("font-family", "var(--fb)", "important");
+      bubble.style.setProperty("padding", "12px 17px", "important");
+      bubble.style.setProperty("margin", "0", "important");
+      bubble.style.setProperty("text-indent", "0", "important");
+
+      if (user) {
+        bubble.style.setProperty("background", "linear-gradient(135deg, #2f6de0, #244fae)", "important");
+        bubble.style.setProperty("background-color", "#2f6de0", "important");
+        bubble.style.setProperty("color", "#ffffff", "important");
+        bubble.style.setProperty("border", "1px solid rgba(255,255,255,.10)", "important");
+        bubble.style.setProperty("border-radius", "20px 20px 5px 20px", "important");
+        bubble.style.setProperty("box-shadow", "0 4px 18px rgba(47,109,224,.32)", "important");
+      } else {
+        bubble.style.setProperty("background", "rgba(15, 26, 48, .92)", "important");
+        bubble.style.setProperty("background-color", "rgba(15, 26, 48, .92)", "important");
+        bubble.style.setProperty("color", "var(--text)", "important");
+        bubble.style.setProperty("border", "1px solid rgba(201,168,76,.16)", "important");
+        bubble.style.setProperty("border-radius", "20px 20px 20px 5px", "important");
+        bubble.style.setProperty("box-shadow", "0 4px 18px rgba(0,0,0,.32)", "important");
+      }
     }
 
     function fixChatMessages() {
@@ -717,66 +852,45 @@
       area.style.setProperty("overflow-x", "hidden", "important");
       area.style.setProperty("display", "flex", "important");
       area.style.setProperty("flex-direction", "column", "important");
-      area.style.setProperty("gap", "10px", "important");
+      area.style.setProperty("gap", "0", "important");
       area.style.setProperty("padding", "28px 36px 20px", "important");
       area.style.setProperty("background", "transparent", "important");
 
-      const rows = area.querySelectorAll(".message, .chat-message");
-
-      rows.forEach(row => {
-        const text = row.textContent.trim();
-        if (!text) return;
-
-        const user = isUserMessage(row);
-        const bot = isBotMessage(row);
-        const bubble = findBubble(row);
-
-        row.style.setProperty("display", "flex", "important");
-        row.style.setProperty("width", "100%", "important");
-        row.style.setProperty("max-width", "100%", "important");
-        row.style.setProperty("background", "transparent", "important");
-        row.style.setProperty("background-color", "transparent", "important");
-        row.style.setProperty("border", "none", "important");
-        row.style.setProperty("box-shadow", "none", "important");
-        row.style.setProperty("padding", "0", "important");
-        row.style.setProperty("margin", "0 0 8px 0", "important");
-        row.style.setProperty("justify-content", user ? "flex-end" : "flex-start", "important");
-        row.style.setProperty("align-items", "flex-start", "important");
-
-        bubble.style.setProperty("display", "inline-block", "important");
-        bubble.style.setProperty("width", "fit-content", "important");
-        bubble.style.setProperty("max-width", window.innerWidth <= 900 ? "86%" : "min(680px, 70%)", "important");
-        bubble.style.setProperty("min-width", "0", "important");
-        bubble.style.setProperty("height", "auto", "important");
-        bubble.style.setProperty("min-height", "0", "important");
-        bubble.style.setProperty("white-space", "pre-wrap", "important");
-        bubble.style.setProperty("overflow-wrap", "anywhere", "important");
-        bubble.style.setProperty("word-break", "normal", "important");
-        bubble.style.setProperty("line-height", "1.55", "important");
-        bubble.style.setProperty("font-size", "16px", "important");
-        bubble.style.setProperty("font-family", "var(--fb)", "important");
-        bubble.style.setProperty("padding", "12px 17px", "important");
-        bubble.style.setProperty("margin", "0", "important");
-
-        if (user) {
-          bubble.style.setProperty("background", "linear-gradient(135deg, #2f6de0, #244fae)", "important");
-          bubble.style.setProperty("color", "#ffffff", "important");
-          bubble.style.setProperty("border", "1px solid rgba(255,255,255,.10)", "important");
-          bubble.style.setProperty("border-radius", "20px 20px 5px 20px", "important");
-          bubble.style.setProperty("box-shadow", "0 4px 18px rgba(47,109,224,.32)", "important");
-        } else {
-          bubble.style.setProperty("background", "rgba(15, 26, 48, .92)", "important");
-          bubble.style.setProperty("color", "var(--text)", "important");
-          bubble.style.setProperty("border", "1px solid rgba(201,168,76,.16)", "important");
-          bubble.style.setProperty("border-radius", "20px 20px 20px 5px", "important");
-          bubble.style.setProperty("box-shadow", "0 4px 18px rgba(0,0,0,.32)", "important");
+      /* Zeitstempel ausblenden, auch wenn sie als eigene Zeile kommen. */
+      Array.from(area.children || []).forEach(el => {
+        const text = (el.textContent || "").trim().toLowerCase();
+        if (text.includes("less than") || text.includes("minute ago") || text === "now") {
+          el.classList.add("styx-hide");
+          el.style.setProperty("display", "none", "important");
         }
+      });
+
+      const rows = getMessageRows(area);
+      rows.forEach((row, index) => {
+        const user = isUserMessage(row, index);
+        const bubble = normalizeBubble(row);
+        applyBubbleStyles(row, bubble, user);
       });
 
       document.querySelectorAll(
         ".chatroom .message__timestamp, .chatroom [class*='timestamp'], .chatroom .message__meta, .chatroom [class*='__meta'], .chatroom small"
       ).forEach(el => {
+        el.classList.add("styx-hide");
         el.style.setProperty("display", "none", "important");
+      });
+    }
+
+    function hideForeignMicButtons(form) {
+      Array.from(form.querySelectorAll("button")).forEach(btn => {
+        if (btn.classList.contains("styx-mic-btn")) return;
+        if (btn.closest(".quick-actions")) return;
+        const type = (btn.getAttribute("type") || "button").toLowerCase();
+        const text = (btn.textContent || btn.getAttribute("aria-label") || btn.title || "").toLowerCase();
+        const looksLikeMic = text.includes("mic") || text.includes("micro") || text.includes("sprache") || text.includes("voice") || btn.innerHTML.includes("svg");
+        if (type !== "submit" || looksLikeMic) {
+          btn.classList.add("styx-hidden-mic");
+          btn.style.setProperty("display", "none", "important");
+        }
       });
     }
 
@@ -784,6 +898,7 @@
       const form = document.querySelector(".chatroom form, .chatroom .chatroom__input, .chatroom .input");
       if (!form) return;
 
+      hideForeignMicButtons(form);
       let mic = form.querySelector(".styx-mic-btn");
 
       if (!mic) {
@@ -793,7 +908,7 @@
         mic.setAttribute("aria-label", "Spracheingabe starten");
         mic.setAttribute("title", "Spracheingabe starten");
 
-        const submit = form.querySelector("input[type='submit']");
+        const submit = form.querySelector("input[type='submit'], button[type='submit']");
         if (submit) submit.insertAdjacentElement("afterend", mic);
         else form.appendChild(mic);
 
