@@ -3,680 +3,475 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SPQR</title>
+  <title>STYX</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 
+  <!-- Chatroom CSS loaded first so our styles below override everything -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/dist/Chatroom.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/index.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/themes/theme2.css" />
 
   <style>
     :root {
-      --bg-deep:    #080c18;
+      --bg:         #080c18;
       --bg-mid:     #0d1526;
-      --bg-panel:   rgba(8, 14, 28, 0.82);
       --accent:     #3b6fd4;
-      --accent-glow: rgba(59, 111, 212, 0.35);
       --gold:       #c9a84c;
-      --gold-dim:   rgba(201, 168, 76, 0.18);
-      --text-main:  #e8e6e0;
-      --text-muted: rgba(232, 230, 224, 0.48);
-      --bubble-bot-bg: rgba(15, 24, 44, 0.96);
-      --bubble-bot-border: rgba(201, 168, 76, 0.14);
-      --bubble-user-bg: #2a5bbf;
-      --radius-bubble: 20px;
-      --font-display: 'Cinzel', serif;
-      --font-body: 'Crimson Pro', serif;
+      --text:       #e8e6e0;
+      --text-muted: rgba(232,230,224,0.45);
+      --bot-bg:     #0f1a30;
+      --user-bg:    #2a5bbf;
+      --fd:         'Cinzel', serif;
+      --fb:         'Crimson Pro', serif;
     }
 
-    * { box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: var(--font-body);
-      background: var(--bg-deep);
-      color: var(--text-main);
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--fb);
     }
 
-    /* ═══════════════════════════════════════════
-       ANIMATED BACKGROUND: Flowing constellation
-    ═══════════════════════════════════════════ */
+    /* ── BACKGROUND ── */
     .bg-canvas {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-      overflow: hidden;
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
     }
-
-    .bg-canvas canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Layered atmospheric glows */
-    .bg-canvas::before {
-      content: "";
-      position: absolute;
-      inset: 0;
+    #starsCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .bg-glow {
+      position: absolute; inset: 0;
       background:
-        radial-gradient(ellipse 70% 50% at 15% 20%, rgba(59, 111, 212, 0.22), transparent),
-        radial-gradient(ellipse 50% 60% at 85% 70%, rgba(99, 58, 160, 0.18), transparent),
-        radial-gradient(ellipse 60% 40% at 50% 90%, rgba(20, 60, 140, 0.14), transparent);
-      animation: atmosphericShift 24s ease-in-out infinite alternate;
+        radial-gradient(ellipse 65% 50% at 15% 22%, rgba(59,111,212,.38), transparent),
+        radial-gradient(ellipse 50% 55% at 85% 70%, rgba(99,58,160,.28), transparent),
+        radial-gradient(ellipse 55% 40% at 52% 88%, rgba(20,55,130,.24), transparent);
+      animation: glowShift 22s ease-in-out infinite alternate;
     }
-
-    .bg-canvas::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      /* Subtle Roman mosaic grid */
+    .bg-grid {
+      position: absolute; inset: 0;
       background-image:
-        linear-gradient(rgba(201,168,76,0.022) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(201,168,76,0.022) 1px, transparent 1px);
+        linear-gradient(rgba(201,168,76,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,168,76,.018) 1px, transparent 1px);
       background-size: 64px 64px;
       animation: gridDrift 40s linear infinite;
     }
-
-    @keyframes atmosphericShift {
-      0%   { opacity: 0.7; transform: scale(1) translate(0, 0); }
-      50%  { opacity: 1;   transform: scale(1.06) translate(1%, -1%); }
-      100% { opacity: 0.8; transform: scale(1.03) translate(-1%, 2%); }
+    @keyframes glowShift {
+      0%  { opacity:.7; transform:scale(1) translate(0,0); }
+      50% { opacity:1;  transform:scale(1.05) translate(1%,-1%); }
+      100%{ opacity:.8; transform:scale(1.03) translate(-1%,2%); }
     }
-
     @keyframes gridDrift {
-      from { background-position: 0 0, 0 0; }
-      to   { background-position: 64px 64px, 64px 64px; }
+      from { background-position:0 0,0 0; }
+      to   { background-position:64px 64px,64px 64px; }
     }
 
-    /* ═══════════════════════════════════════════
-       LAYOUT
-    ═══════════════════════════════════════════ */
+    /* ── LAYOUT ── */
     .app-shell {
-      position: relative;
-      z-index: 1;
+      position: relative; z-index: 1;
       display: grid;
-      grid-template-columns: 240px 1fr;
-      width: 100vw;
-      height: 100vh;
+      grid-template-columns: 220px 1fr;
+      width: 100vw; height: 100vh;
     }
 
-    /* ═══════════════════════════════════════════
-       SIDEBAR
-    ═══════════════════════════════════════════ */
+    /* ── SIDEBAR ── */
     .sidebar {
-      background: rgba(6, 10, 22, 0.72);
-      border-right: 1px solid rgba(201, 168, 76, 0.1);
+      background: rgba(5,9,20,.45);
+      border-right: 1px solid rgba(201,168,76,.09);
       backdrop-filter: blur(12px);
       padding: 20px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      display: flex; flex-direction: column; gap: 12px;
     }
-
     .sidebar-logo {
-      font-family: var(--font-display);
-      font-size: 11px;
-      letter-spacing: 0.25em;
-      color: var(--gold);
-      opacity: 0.6;
-      text-transform: uppercase;
-      padding: 0 4px 12px;
-      border-bottom: 1px solid rgba(201, 168, 76, 0.1);
+      font-family: var(--fd); font-size: 10px; letter-spacing: .28em;
+      color: var(--gold); opacity: .55; padding-bottom: 14px;
+      border-bottom: 1px solid rgba(201,168,76,.09);
     }
-
     .new-chat-btn {
-      border: 1px solid rgba(201, 168, 76, 0.2);
-      border-radius: 12px;
-      background: rgba(59, 111, 212, 0.15);
-      color: var(--text-main);
-      padding: 10px 14px;
-      font-family: var(--font-display);
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      border: 1px solid rgba(201,168,76,.18); border-radius: 11px;
+      background: rgba(59,111,212,.13); color: var(--text);
+      padding: 10px 14px; font-family: var(--fd); font-size: 11px;
+      letter-spacing: .08em; cursor: pointer;
+      transition: background .2s, border-color .2s;
     }
+    .new-chat-btn:hover { background: rgba(59,111,212,.26); border-color: rgba(201,168,76,.35); }
 
-    .new-chat-btn:hover {
-      background: rgba(59, 111, 212, 0.28);
-      border-color: rgba(201, 168, 76, 0.35);
-    }
-
-    .chat-history { display: none; }
-
-    /* ═══════════════════════════════════════════
-       MAIN PANEL
-    ═══════════════════════════════════════════ */
+    /* ── MAIN ── */
     .main-panel {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      padding: 16px 16px 16px 0;
+      min-width: 0; display: flex; flex-direction: column;
+      height: 100vh; padding: 16px 16px 16px 0;
     }
-
     .chat-section {
-      flex: 1 1 auto;
-      min-height: 0;
-      position: relative;
-      overflow: hidden;
-      border-radius: 24px;
-      background: rgba(8, 14, 28, 0.6);
-      border: 1px solid rgba(201, 168, 76, 0.08);
-      backdrop-filter: blur(6px);
-      box-shadow:
-        inset 0 1px 0 rgba(201, 168, 76, 0.06),
-        0 16px 48px rgba(0, 0, 0, 0.4);
+      flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden;
+      border-radius: 22px;
+      background: rgba(6,11,24,.18);
+      border: 1px solid rgba(201,168,76,.07);
+      
+      box-shadow: inset 0 1px 0 rgba(201,168,76,.05), 0 16px 48px rgba(0,0,0,.4);
     }
 
-    /* ═══════════════════════════════════════════
-       CHATROOM BASE
-    ═══════════════════════════════════════════ */
+    /* ── CHATROOM RESET ── */
     .chat-container {
-      position: absolute !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      overflow: hidden !important;
+      position: absolute !important; inset: 0 !important;
+      width: 100% !important; height: 100% !important;
+      background: transparent !important; overflow: hidden !important;
+    }
+
+    /* Kill ALL chatroom backgrounds and borders */
+    .chatroom,
+    .chatroom > *,
+    .chatroom__messages,
+    .chatroom .messages,
+    .chatroom .chats,
+    .chatroom form,
+    .chatroom .chatroom__input,
+    .chatroom .input {
       background: transparent !important;
+      background-color: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
     }
 
     .chatroom {
-      position: absolute !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      max-width: none !important;
-      margin: 0 !important;
-      border: none !important;
+      position: absolute !important; inset: 0 !important;
+      width: 100% !important; height: 100% !important;
+      max-width: none !important; margin: 0 !important;
       border-radius: 0 !important;
-      box-shadow: none !important;
-      background: transparent !important;
-      display: flex !important;
-      flex-direction: column !important;
+      display: flex !important; flex-direction: column !important;
+      overflow: hidden !important;
     }
 
-    .chatroom h3, .chatroom .title { display: none !important; }
-    .chatroom, .chatroom__messages, .chatroom .messages,
-    .chatroom form, .chatroom .input, .chatroom .chatroom__input {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-    }
+    .chatroom h3, .chatroom .title, .chatroom header { display: none !important; }
 
-    /* ═══════════════════════════════════════════
-       MESSAGES AREA
-       — enough bottom space for quick-actions + input
-    ═══════════════════════════════════════════ */
+    /* ── MESSAGES AREA ── */
     .chatroom__messages,
     .chatroom .messages,
     .chatroom .chats,
     .chatroom [class*="messages"] {
       position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 140px !important;       /* = input height (64px) + gap (20px) + quick-actions (56px) */
-      width: 100% !important;
-      max-width: none !important;
-      padding: 28px 36px 24px !important;
-      overflow-y: auto !important;
-      overflow-x: hidden !important;
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 10px !important;
-      color: var(--text-main) !important;
+      top: 0 !important; left: 0 !important; right: 0 !important;
+      bottom: 136px !important;
+      width: 100% !important; max-width: none !important;
+      padding: 28px 36px 20px !important;
+      overflow-y: auto !important; overflow-x: hidden !important;
+      display: flex !important; flex-direction: column !important;
+      gap: 8px !important;
+      color: var(--text) !important;
       scroll-behavior: smooth;
     }
-
-    .chatroom__messages::-webkit-scrollbar { width: 4px; }
+    .chatroom__messages::-webkit-scrollbar { width: 3px; }
     .chatroom__messages::-webkit-scrollbar-track { background: transparent; }
-    .chatroom__messages::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.18); border-radius: 2px; }
+    .chatroom__messages::-webkit-scrollbar-thumb { background: rgba(201,168,76,.15); border-radius: 2px; }
 
-    /* ═══════════════════════════════════════════
-       MESSAGE ROWS  — full width flex rows
-    ═══════════════════════════════════════════ */
+    /* ── MESSAGE ROWS ── */
     .chatroom .message,
-    .chatroom .message--bot,
-    .chatroom .message--user,
-    .chatroom .messages .message,
-    .chatroom .chatroom__messages .message,
     .chatroom [class*="message"] {
-      width: 100% !important;
-      max-width: 100% !important;
+      width: 100% !important; max-width: 100% !important;
       display: flex !important;
       background: transparent !important;
-      border: 0 !important;
-      box-shadow: none !important;
-      margin: 0 0 4px !important;
-      padding: 0 !important;
+      background-color: transparent !important;
+      border: 0 !important; box-shadow: none !important;
+      margin: 0 0 2px !important; padding: 0 !important;
     }
-
     .chatroom .message--bot,
-    .chatroom [class*="bot"] {
-      justify-content: flex-start !important;
-      align-items: flex-start !important;
-    }
-
+    .chatroom [class*="--bot"] { justify-content: flex-start !important; align-items: flex-start !important; }
     .chatroom .message--user,
-    .chatroom [class*="user"] {
-      justify-content: flex-end !important;
-      align-items: flex-start !important;
-    }
+    .chatroom [class*="--user"] { justify-content: flex-end !important; align-items: flex-start !important; }
 
-    /* ═══════════════════════════════════════════
-       BUBBLES  — key fix: width:auto, fit-content
-    ═══════════════════════════════════════════ */
+    /* ── BUBBLES — the core fix ── */
+    /*
+      The Chatroom library sets .message__text { width:100% } via its own stylesheet.
+      We override with max-specificity + !important + inline JS as fallback.
+    */
+    .chatroom .chatroom__messages .message .message__text,
+    .chatroom .chatroom__messages .message p,
+    .chatroom .chatroom__messages .message span.message__text,
     .chatroom .message__text,
     .chatroom .message-text,
     .chatroom .message_content,
-    .chatroom .message-content,
-    .chatroom .message .text,
-    .chatroom .message p {
+    .chatroom .message-content {
       display: inline-block !important;
-      flex: 0 1 auto !important;
       width: auto !important;
-      max-width: min(720px, 72%) !important;
       min-width: 0 !important;
-      height: auto !important;
-      min-height: 0 !important;
+      max-width: min(700px, 72%) !important;
+      height: auto !important; min-height: 0 !important;
       white-space: pre-wrap !important;
       overflow-wrap: anywhere !important;
       word-break: normal !important;
-      line-height: 1.6 !important;
-      font-size: 16px !important;
-      font-family: var(--font-body) !important;
+      line-height: 1.65 !important;
+      font-size: 15.5px !important;
+      font-family: var(--fb) !important;
       margin: 0 !important;
+      /* Reset any white background from theme2.css */
+      background: transparent !important;
     }
 
     /* Bot bubble */
     .chatroom .message--bot .message__text,
     .chatroom .message--bot .message-text,
     .chatroom .message--bot .message_content,
-    .chatroom .message--bot .message-content,
     .chatroom .message--bot p,
-    .chatroom [class*="bot"] .message__text,
-    .chatroom [class*="bot"] p {
-      background: var(--bubble-bot-bg) !important;
-      color: var(--text-main) !important;
-      border: 1px solid var(--bubble-bot-border) !important;
-      border-radius: var(--radius-bubble) !important;
-      border-top-left-radius: 6px !important;
-      padding: 13px 18px !important;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.28) !important;
+    .chatroom [class*="--bot"] .message__text {
+      background-color: var(--bot-bg) !important;
+      color: var(--text) !important;
+      border: 1px solid rgba(201,168,76,.13) !important;
+      border-radius: 20px !important; border-top-left-radius: 5px !important;
+      padding: 12px 17px !important;
+      box-shadow: 0 3px 16px rgba(0,0,0,.3) !important;
     }
 
     /* User bubble */
     .chatroom .message--user .message__text,
     .chatroom .message--user .message-text,
     .chatroom .message--user .message_content,
-    .chatroom .message--user .message-content,
     .chatroom .message--user p,
-    .chatroom [class*="user"] .message__text,
-    .chatroom [class*="user"] p {
-      background: var(--bubble-user-bg) !important;
-      color: #ffffff !important;
+    .chatroom [class*="--user"] .message__text {
+      background-color: var(--user-bg) !important;
+      color: #fff !important;
       border: none !important;
-      border-radius: var(--radius-bubble) !important;
-      border-top-right-radius: 6px !important;
-      padding: 13px 18px !important;
-      box-shadow: 0 4px 18px rgba(42, 91, 191, 0.32) !important;
+      border-radius: 20px !important; border-top-right-radius: 5px !important;
+      padding: 12px 17px !important;
+      box-shadow: 0 3px 16px rgba(42,91,191,.3) !important;
     }
 
-    /* ═══════════════════════════════════════════
-       INPUT BAR — anchored at absolute bottom
-    ═══════════════════════════════════════════ */
-    .chatroom form,
-    .chatroom .input,
-    .chatroom .chatroom__input,
-    .chatroom [class*="input"] {
-      position: absolute !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      bottom: 20px !important;
-      width: min(720px, calc(100% - 48px)) !important;
-      max-width: 720px !important;
-      display: flex !important;
-      align-items: center !important;
-      gap: 10px !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      z-index: 50 !important;
+    /* Timestamp */
+    .chatroom .message__timestamp,
+    .chatroom [class*="timestamp"] {
+      font-size: 11px !important;
+      color: rgba(201,168,76,.3) !important;
       background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
+    }
+
+    /* ── INPUT BAR ── */
+    .chatroom form,
+    .chatroom .chatroom__input,
+    .chatroom .input,
+    .chatroom [class*="chatroom__input"] {
+      position: absolute !important;
+      left: 50% !important; transform: translateX(-50%) !important;
+      bottom: 18px !important;
+      width: min(700px, calc(100% - 48px)) !important;
+      max-width: 700px !important;
+      display: flex !important; align-items: center !important;
+      gap: 10px !important; padding: 0 !important; margin: 0 !important;
+      z-index: 50 !important;
     }
 
     .chatroom input:not([type="submit"]),
     .chatroom textarea {
-      flex: 1 1 auto !important;
-      width: 100% !important;
-      min-width: 0 !important;
-      height: 56px !important;
-      min-height: 56px !important;
-      resize: none !important;
-      background: rgba(8, 14, 28, 0.95) !important;
-      color: var(--text-main) !important;
-      border: 1px solid rgba(201, 168, 76, 0.18) !important;
-      border-radius: 16px !important;
+      flex: 1 1 auto !important; width: 100% !important; min-width: 0 !important;
+      height: 54px !important; min-height: 54px !important; resize: none !important;
+      background-color: rgba(6,11,24,.97) !important;
+      background: rgba(6,11,24,.97) !important;
+      color: var(--text) !important;
+      border: 1px solid rgba(201,168,76,.17) !important;
+      border-radius: 15px !important;
       padding: 14px 18px !important;
-      font-family: var(--font-body) !important;
-      font-size: 16px !important;
+      font-family: var(--fb) !important; font-size: 15.5px !important;
       outline: none !important;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
-      transition: border-color 0.2s ease !important;
+      box-shadow: 0 4px 22px rgba(0,0,0,.28) !important;
+      transition: border-color .2s !important;
     }
-
     .chatroom input:not([type="submit"]):focus,
-    .chatroom textarea:focus {
-      border-color: rgba(201, 168, 76, 0.38) !important;
-    }
-
+    .chatroom textarea:focus { border-color: rgba(201,168,76,.36) !important; }
     .chatroom input:not([type="submit"])::placeholder,
-    .chatroom textarea::placeholder {
-      color: var(--text-muted) !important;
-      font-style: italic !important;
-    }
+    .chatroom textarea::placeholder { color: var(--text-muted) !important; font-style: italic !important; }
 
-    /* Send button */
     .chatroom input[type="submit"] {
       flex: 0 0 auto !important;
-      width: 56px !important;
-      min-width: 56px !important;
-      height: 56px !important;
-      border: none !important;
-      border-radius: 15px !important;
+      width: 54px !important; min-width: 54px !important; height: 54px !important;
+      border: none !important; border-radius: 14px !important;
       background-color: var(--accent) !important;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'/%3E%3Cpath d='M13 6l6 6-6 6'/%3E%3C/svg%3E") !important;
-      background-repeat: no-repeat !important;
-      background-position: center !important;
-      background-size: 22px 22px !important;
-      color: transparent !important;
-      text-indent: -9999px !important;
+      background-repeat: no-repeat !important; background-position: center !important;
+      background-size: 22px !important;
+      color: transparent !important; text-indent: -9999px !important;
       cursor: pointer !important;
-      box-shadow: 0 4px 20px rgba(59, 111, 212, 0.35) !important;
-      transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+      box-shadow: 0 4px 18px rgba(59,111,212,.35) !important;
+      transition: transform .15s, box-shadow .15s !important;
     }
-
-    .chatroom input[type="submit"]:hover {
-      transform: scale(1.05) !important;
-      box-shadow: 0 6px 28px rgba(59, 111, 212, 0.55) !important;
-    }
-
+    .chatroom input[type="submit"]:hover { transform: scale(1.06) !important; box-shadow: 0 6px 26px rgba(59,111,212,.55) !important; }
     .chatroom input[type="submit"]::before { content: none !important; }
 
     /* Mic button */
     .chatroom button:not(.quick-actions button) {
       flex: 0 0 auto !important;
-      width: 56px !important;
-      min-width: 56px !important;
-      height: 56px !important;
-      border: 1px solid rgba(201, 168, 76, 0.18) !important;
-      border-radius: 15px !important;
-      background: rgba(8, 14, 28, 0.95) !important;
-      color: transparent !important;
-      cursor: pointer !important;
-      position: relative !important;
-      font-size: 0 !important;
-      overflow: hidden !important;
-      transition: border-color 0.2s !important;
+      width: 54px !important; min-width: 54px !important; height: 54px !important;
+      border: 1px solid rgba(201,168,76,.17) !important; border-radius: 14px !important;
+      background-color: rgba(6,11,24,.97) !important; background-image: none !important;
+      color: transparent !important; cursor: pointer !important;
+      position: relative !important; font-size: 0 !important; overflow: hidden !important;
     }
-
     .chatroom button:not(.quick-actions button)::before {
-      content: "🎤";
-      font-size: 20px;
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      content: "🎤"; font-size: 19px;
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
     }
 
-    .chatroom button:not(.quick-actions button):hover {
-      border-color: rgba(201, 168, 76, 0.36) !important;
-    }
-
-    /* ═══════════════════════════════════════════
-       QUICK-ACTIONS
-       Positioned by JS exactly above the input bar.
-       The `#quickActions` element is placed INSIDE
-       .chat-section so its `absolute` is relative to it.
-    ═══════════════════════════════════════════ */
+    /* ── QUICK-ACTIONS ── */
     .quick-actions {
-      position: absolute !important;
-      z-index: 60 !important;
-      display: flex !important;
-      flex-wrap: wrap !important;
-      justify-content: center !important;
-      align-items: center !important;
-      gap: 8px !important;
-      pointer-events: auto !important;
-      transition: opacity 0.25s, visibility 0.25s !important;
+      position: absolute !important; z-index: 60 !important;
+      display: flex !important; flex-wrap: wrap !important;
+      justify-content: center !important; align-items: center !important;
+      gap: 8px !important; pointer-events: auto !important;
+      transition: opacity .25s, visibility .25s !important;
     }
-
     .quick-actions button {
-      height: 36px !important;
-      padding: 0 16px !important;
+      height: 34px !important; padding: 0 15px !important;
       border-radius: 999px !important;
-      border: 1px solid rgba(201, 168, 76, 0.18) !important;
-      background: rgba(10, 18, 34, 0.88) !important;
-      color: var(--text-main) !important;
-      font-family: var(--font-body) !important;
-      font-size: 14px !important;
-      letter-spacing: 0.02em !important;
-      cursor: pointer !important;
-      backdrop-filter: blur(8px) !important;
-      transition: background 0.18s, border-color 0.18s !important;
+      border: 1px solid rgba(201,168,76,.17) !important;
+      background-color: rgba(8,13,28,.9) !important;
+      color: var(--text) !important;
+      font-family: var(--fb) !important; font-size: 14px !important;
+      cursor: pointer !important; backdrop-filter: blur(8px) !important;
       white-space: nowrap !important;
+      transition: background .18s, border-color .18s !important;
     }
-
     .quick-actions button::before { content: none !important; }
-
     .quick-actions button:hover {
-      background: rgba(59, 111, 212, 0.22) !important;
-      border-color: rgba(201, 168, 76, 0.36) !important;
+      background-color: rgba(59,111,212,.22) !important;
+      border-color: rgba(201,168,76,.36) !important;
     }
+    body.chat-locked .quick-actions { opacity:0 !important; visibility:hidden !important; pointer-events:none !important; }
 
-    body.chat-locked .quick-actions {
-      opacity: 0 !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
-    }
-
-    /* ═══════════════════════════════════════════
-       WELCOME SCREEN
-    ═══════════════════════════════════════════ */
+    /* ── WELCOME SCREEN ── */
     .welcome-screen {
-      position: fixed !important;
-      inset: 0 !important;
-      z-index: 999999 !important;
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-      justify-content: center !important;
-      text-align: center;
-      overflow: hidden !important;
-      background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 100%) !important;
-      transition: opacity 0.5s ease, visibility 0.5s ease !important;
+      position: fixed !important; inset: 0 !important; z-index: 999999 !important;
+      display: flex !important; flex-direction: column !important;
+      align-items: center !important; justify-content: center !important;
+      text-align: center; overflow: hidden !important;
+      background: linear-gradient(180deg, var(--bg) 0%, var(--bg-mid) 100%) !important;
+      transition: opacity .5s ease, visibility .5s ease !important;
     }
+    .welcome-screen.hidden { opacity:0 !important; visibility:hidden !important; pointer-events:none !important; }
 
-    .welcome-screen.hidden {
-      opacity: 0 !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
-    }
-
-    /* Decorative rings behind welcome text */
-    .welcome-screen::before {
-      content: "";
-      position: absolute;
-      width: 520px;
-      height: 520px;
-      border-radius: 50%;
-      border: 1px solid rgba(201, 168, 76, 0.08);
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      animation: ringPulse 5s ease-in-out infinite;
-    }
-
-    .welcome-screen::after {
-      content: "";
-      position: absolute;
-      width: 340px;
-      height: 340px;
-      border-radius: 50%;
-      border: 1px solid rgba(59, 111, 212, 0.12);
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      animation: ringPulse 5s ease-in-out infinite 1.5s;
-    }
-
-    @keyframes ringPulse {
-      0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
-      50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.04); }
-    }
-
-    .welcome-emblem {
+    /* Rotating Greek Omega / Ouroboros symbol */
+    .welcome-symbol {
+      width: 80px; height: 80px; margin-bottom: 22px;
       position: relative;
-      z-index: 1;
-      margin-bottom: 28px;
+    }
+    .welcome-symbol svg {
+      width: 100%; height: 100%;
+      animation: rotateSlow 12s linear infinite;
+      filter: drop-shadow(0 0 16px rgba(201,168,76,.4));
+    }
+    @keyframes rotateSlow {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
     }
 
-    .welcome-emblem svg {
-      width: 64px;
-      height: 64px;
-      opacity: 0.7;
-      filter: drop-shadow(0 0 18px rgba(201,168,76,0.35));
+    /* Pulsing rings */
+    .ring {
+      position: absolute; border-radius: 50%;
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+      border: 1px solid rgba(201,168,76,.07);
+      animation: ringPulse 6s ease-in-out infinite;
+    }
+    .ring-1 { width: 500px; height: 500px; }
+    .ring-2 { width: 320px; height: 320px; animation-delay: 2s; border-color: rgba(59,111,212,.09); }
+    .ring-3 { width: 180px; height: 180px; animation-delay: 4s; border-color: rgba(201,168,76,.12); }
+    @keyframes ringPulse {
+      0%,100% { opacity:.4; transform:translate(-50%,-50%) scale(1); }
+      50%      { opacity:1;  transform:translate(-50%,-50%) scale(1.04); }
     }
 
     .welcome-screen h1 {
-      position: relative;
-      z-index: 1;
-      margin: 0 0 10px;
-      font-family: var(--font-display);
-      font-size: 52px;
-      font-weight: 700;
-      letter-spacing: 0.22em;
-      color: #e8e0cc;
-      text-shadow: 0 0 40px rgba(201,168,76,0.3);
+      position: relative; z-index: 1;
+      font-family: var(--fd); font-size: 58px; font-weight: 700;
+      letter-spacing: .24em; color: #ede5d0;
+      text-shadow: 0 0 50px rgba(201,168,76,.28);
+      margin-bottom: 30px;
     }
 
-    .welcome-screen .subtitle {
-      position: relative;
-      z-index: 1;
-      font-family: var(--font-body);
-      font-style: italic;
-      font-size: 17px;
-      color: var(--text-muted);
-      margin: 0 0 36px;
-      letter-spacing: 0.06em;
+    .welcome-start-btn {
+      position: relative; z-index: 1;
+      border: 1px solid rgba(201,168,76,.28); border-radius: 13px;
+      padding: 13px 34px;
+      background: rgba(59,111,212,.18); color: #ede5d0;
+      font-family: var(--fd); font-size: 12px; letter-spacing: .16em;
+      cursor: pointer; 
+      transition: all .25s ease;
     }
-
-    .welcome-screen button {
-      position: relative;
-      z-index: 1;
-      border: 1px solid rgba(201, 168, 76, 0.3);
-      border-radius: 14px;
-      padding: 13px 32px;
-      background: rgba(59, 111, 212, 0.2);
-      color: #e8e0cc;
-      font-family: var(--font-display);
-      font-size: 13px;
-      letter-spacing: 0.15em;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      backdrop-filter: blur(6px);
-    }
-
-    .welcome-screen button:hover {
-      background: rgba(59, 111, 212, 0.38);
-      border-color: rgba(201, 168, 76, 0.55);
-      box-shadow: 0 0 28px rgba(59, 111, 212, 0.28);
+    .welcome-start-btn:hover {
+      background: rgba(59,111,212,.36); border-color: rgba(201,168,76,.5);
+      box-shadow: 0 0 28px rgba(59,111,212,.25);
     }
 
     body.chat-locked .app-shell { pointer-events: none !important; }
     body.chat-locked .welcome-screen,
     body.chat-locked .welcome-screen * { pointer-events: auto !important; }
 
-    /* ═══════════════════════════════════════════
-       RESPONSIVE
-    ═══════════════════════════════════════════ */
+    /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
       .app-shell { grid-template-columns: 1fr; }
       .sidebar { display: none; }
       .main-panel { padding: 12px; }
-
       .chatroom__messages,
       .chatroom .messages,
-      .chatroom .chats,
-      .chatroom [class*="messages"] {
-        bottom: 140px !important;
-        padding: 20px 18px 20px !important;
-      }
-
-      .chatroom .message__text,
-      .chatroom .message p {
-        max-width: 86% !important;
-      }
+      .chatroom .chats { bottom: 136px !important; padding: 18px 16px 16px !important; }
+      .chatroom .message__text, .chatroom .message p { max-width: 86% !important; }
     }
-
     @media (prefers-reduced-motion: reduce) {
-      .bg-canvas::before,
-      .bg-canvas::after,
-      .welcome-screen::before,
-      .welcome-screen::after { animation: none !important; }
+      .bg-glow, .bg-grid, .welcome-symbol svg, .ring { animation: none !important; }
     }
   </style>
 </head>
 
 <body class="chat-locked">
-
-  <!-- ░░ CREATIVE BACKGROUND ░░ -->
   <div class="bg-canvas">
     <canvas id="starsCanvas"></canvas>
+    <div class="bg-glow"></div>
+    <div class="bg-grid"></div>
   </div>
 
   <div class="app-shell">
     <aside class="sidebar">
       <div class="sidebar-logo">SPQR · STYX</div>
       <button class="new-chat-btn" onclick="resetChat()">+ Neuer Chat</button>
-      <div class="chat-history"></div>
     </aside>
 
     <main class="main-panel">
       <div class="chat-section" id="chatSection">
         <div class="chat-container"></div>
 
-        <!-- Quick-actions: positioned by syncQuickActionsToInput() -->
         <div class="quick-actions" id="quickActions">
           <button type="button" data-message="salve">Salve</button>
           <button type="button" data-message="who are you">Wer bist du?</button>
           <button type="button" data-message="what can you do">Was kannst du?</button>
         </div>
 
+        <!-- WELCOME SCREEN: only "STYX" + rotating Greek symbol -->
         <div class="welcome-screen" id="welcomeScreen">
-          <div class="welcome-emblem">
-            <!-- Roman laurel / eagle emblem SVG -->
-            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="32" cy="32" r="28" stroke="#c9a84c" stroke-width="1.2" stroke-dasharray="4 3"/>
-              <path d="M32 14 C24 20, 14 22, 14 32 C14 42, 22 48, 32 50 C42 48, 50 42, 50 32 C50 22, 40 20, 32 14Z" stroke="#c9a84c" stroke-width="1" fill="none"/>
-              <path d="M32 22 L34 29 L41 29 L35.5 33.5 L37.5 40.5 L32 36 L26.5 40.5 L28.5 33.5 L23 29 L30 29Z" fill="#c9a84c" fill-opacity="0.65"/>
+          <div class="ring ring-1"></div>
+          <div class="ring ring-2"></div>
+          <div class="ring ring-3"></div>
+
+          <!-- Rotating Greek Ouroboros / Omega wheel -->
+          <div class="welcome-symbol" style="position:relative;z-index:1">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer ring with Greek meander tick marks -->
+              <circle cx="50" cy="50" r="44" fill="none" stroke="#c9a84c" stroke-width="1.2" stroke-dasharray="6 4"/>
+              <!-- Inner decorative ring -->
+              <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(201,168,76,.4)" stroke-width="0.7"/>
+              <!-- Greek cross / 8-pointed star -->
+              <path d="M50 12 L54 38 L80 30 L62 50 L80 70 L54 62 L50 88 L46 62 L20 70 L38 50 L20 30 L46 38 Z"
+                    fill="none" stroke="#c9a84c" stroke-width="1.3" stroke-linejoin="round"/>
+              <!-- Center dot -->
+              <circle cx="50" cy="50" r="3.5" fill="#c9a84c" fill-opacity="0.7"/>
+              <!-- Four cardinal Greek-key accents -->
+              <g stroke="#c9a84c" stroke-width="1" fill="none" stroke-opacity="0.55">
+                <path d="M50 20 L50 16"/>
+                <path d="M50 84 L50 80"/>
+                <path d="M20 50 L16 50"/>
+                <path d="M84 50 L80 50"/>
+              </g>
             </svg>
           </div>
+
           <h1>STYX</h1>
-          <p class="subtitle">Audi, vide, tace</p>
-          <button type="button" onclick="startChat()">Chat starten</button>
+          <button class="welcome-start-btn" type="button" onclick="startChat()">Chat starten</button>
         </div>
       </div>
     </main>
@@ -685,93 +480,81 @@
   <script src="https://cdn.jsdelivr.net/gh/weberi/chatroom@master/dist/Chatroom.js"></script>
 
   <script>
-    /* ═══════════════════════════════════════════
-       CONSTELLATION BACKGROUND
-    ═══════════════════════════════════════════ */
-    (function initStars() {
+    /* ── STAR FIELD ── */
+    (function() {
       const canvas = document.getElementById("starsCanvas");
       const ctx = canvas.getContext("2d");
-      let W, H, stars, mouse = { x: 0, y: 0 };
-      const COUNT = 130;
-      const CONNECT_DIST = 120;
+      let W, H, stars;
+      const N = 160, LINK = 140;
 
-      function resize() {
-        W = canvas.width  = window.innerWidth;
-        H = canvas.height = window.innerHeight;
-      }
+      function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
 
       function mkStar() {
+        const big = Math.random() < 0.12;
         return {
-          x: Math.random() * W,
-          y: Math.random() * H,
-          r: Math.random() * 1.2 + 0.3,
-          vx: (Math.random() - 0.5) * 0.18,
-          vy: (Math.random() - 0.5) * 0.18,
-          alpha: Math.random() * 0.5 + 0.3,
-          twinkleSpeed: Math.random() * 0.008 + 0.003,
-          twinklePhase: Math.random() * Math.PI * 2,
+          x: Math.random()*W, y: Math.random()*H,
+          r: big ? Math.random()*2.2+1.4 : Math.random()*1.3+0.5,
+          vx:(Math.random()-.5)*.14, vy:(Math.random()-.5)*.14,
+          a: big ? Math.random()*.25+0.7 : Math.random()*.35+0.45,
+          tp: Math.random()*Math.PI*2,
+          ts: Math.random()*.008+.003,
+          big
         };
       }
 
-      function init() {
-        resize();
-        stars = Array.from({ length: COUNT }, mkStar);
-      }
+      function frame() {
+        ctx.clearRect(0,0,W,H);
 
-      function draw(ts) {
-        ctx.clearRect(0, 0, W, H);
-
-        stars.forEach(s => {
-          // Move
-          s.x += s.vx;
-          s.y += s.vy;
-          if (s.x < 0) s.x = W;
-          if (s.x > W) s.x = 0;
-          if (s.y < 0) s.y = H;
-          if (s.y > H) s.y = 0;
-
-          // Twinkle
-          s.twinklePhase += s.twinkleSpeed;
-          const a = s.alpha + Math.sin(s.twinklePhase) * 0.18;
-
-          // Draw star
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(220, 210, 190, ${Math.max(0.05, a)})`;
-          ctx.fill();
-        });
-
-        // Connect nearby stars + slight mouse attraction
-        for (let i = 0; i < stars.length; i++) {
-          for (let j = i + 1; j < stars.length; j++) {
-            const dx = stars[i].x - stars[j].x;
-            const dy = stars[i].y - stars[j].y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < CONNECT_DIST) {
-              const opacity = (1 - dist / CONNECT_DIST) * 0.12;
+        // Constellation lines first (behind stars)
+        for(let i=0;i<stars.length;i++) {
+          for(let j=i+1;j<stars.length;j++) {
+            const dx=stars[i].x-stars[j].x, dy=stars[i].y-stars[j].y;
+            const d=Math.sqrt(dx*dx+dy*dy);
+            if(d<LINK) {
               ctx.beginPath();
-              ctx.strokeStyle = `rgba(201, 168, 76, ${opacity})`;
-              ctx.lineWidth = 0.6;
-              ctx.moveTo(stars[i].x, stars[i].y);
-              ctx.lineTo(stars[j].x, stars[j].y);
+              ctx.strokeStyle=`rgba(180,155,90,${(1-d/LINK)*.30})`;
+              ctx.lineWidth=.75;
+              ctx.moveTo(stars[i].x,stars[i].y);
+              ctx.lineTo(stars[j].x,stars[j].y);
               ctx.stroke();
             }
           }
         }
 
-        requestAnimationFrame(draw);
+        // Stars
+        stars.forEach(s => {
+          s.x+=s.vx; s.y+=s.vy;
+          if(s.x<0) s.x=W; if(s.x>W) s.x=0;
+          if(s.y<0) s.y=H; if(s.y>H) s.y=0;
+          s.tp+=s.ts;
+          const a = Math.max(.18, s.a+Math.sin(s.tp)*.22);
+
+          if(s.big) {
+            const grd = ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*5);
+            grd.addColorStop(0, `rgba(230,215,175,${a})`);
+            grd.addColorStop(1, `rgba(230,215,175,0)`);
+            ctx.beginPath();
+            ctx.arc(s.x,s.y,s.r*5,0,Math.PI*2);
+            ctx.fillStyle=grd;
+            ctx.fill();
+          }
+
+          ctx.beginPath();
+          ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+          ctx.fillStyle=`rgba(235,225,200,${a})`;
+          ctx.fill();
+        });
+
+        requestAnimationFrame(frame);
       }
 
       window.addEventListener("resize", resize);
-      window.addEventListener("mousemove", e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-      init();
-      requestAnimationFrame(draw);
+      resize();
+      stars = Array.from({length:N}, mkStar);
+      requestAnimationFrame(frame);
     })();
 
-
-    /* ═══════════════════════════════════════════
-       CHATROOM INIT
-    ═══════════════════════════════════════════ */
+    /* ── CHATROOM ── */
     const chatroom = new window.Chatroom({
       host: "https://shiny-waddle-97ppvpwpxj6xfx6qj-5005.app.github.dev",
       title: "",
@@ -779,38 +562,21 @@
       speechRecognition: "de-DE",
       voiceLang: "de-DE"
     });
-
     chatroom.openChat();
 
-    /* ═══════════════════════════════════════════
-       HELPERS
-    ═══════════════════════════════════════════ */
-    function getChatInput() {
-      return (
-        document.querySelector(".chatroom input:not([type='submit'])") ||
-        document.querySelector(".chatroom textarea")
-      );
-    }
-
-    function getSubmitButton() {
-      return document.querySelector(".chatroom input[type='submit']");
-    }
+    /* ── HELPERS ── */
+    const getInput  = () => document.querySelector(".chatroom input:not([type='submit'])") || document.querySelector(".chatroom textarea");
+    const getSubmit = () => document.querySelector(".chatroom input[type='submit']");
 
     function setPlaceholder() {
-      const input = getChatInput();
-      if (input) {
-        input.placeholder = "Bitte stelle deine Frage";
-        input.setAttribute("aria-label", "Bitte stelle deine Frage");
-      } else {
-        setTimeout(setPlaceholder, 200);
-      }
+      const i = getInput();
+      if(i) { i.placeholder="Bitte stelle deine Frage"; i.setAttribute("aria-label","Bitte stelle deine Frage"); }
+      else setTimeout(setPlaceholder, 200);
     }
-
     setTimeout(setPlaceholder, 300);
 
     function hideWelcome() {
-      const w = document.getElementById("welcomeScreen");
-      if (w) w.classList.add("hidden");
+      document.getElementById("welcomeScreen")?.classList.add("hidden");
     }
 
     function startChat() {
@@ -818,190 +584,205 @@
       hideWelcome();
       setPlaceholder();
       bindQuickActions();
-      syncQuickActionsToInput();
-      setTimeout(syncQuickActionsToInput, 200);
-      const input = getChatInput();
-      if (input) setTimeout(() => input.focus(), 120);
+      syncQA();
+      setTimeout(syncQA, 200);
+      const i = getInput();
+      if(i) setTimeout(()=>i.focus(), 120);
     }
 
     function resetChat() { location.reload(); }
 
-    function scrollMessagesToBottom() {
-      const el =
-        document.querySelector(".chatroom__messages") ||
-        document.querySelector(".chatroom .messages") ||
-        document.querySelector(".chatroom .chats") ||
-        document.querySelector(".chatroom [class*='messages']");
-      if (el) el.scrollTop = el.scrollHeight;
+    function scrollBottom() {
+      const el = document.querySelector(".chatroom__messages, .chatroom .messages, .chatroom .chats");
+      if(el) el.scrollTop = el.scrollHeight;
     }
 
-    /* ═══════════════════════════════════════════
-       SEND MESSAGE
-    ═══════════════════════════════════════════ */
+    /* ── SEND ── */
     function sendMsg(text) {
-      if (document.body.classList.contains("chat-locked")) return;
-
+      if(document.body.classList.contains("chat-locked")) return;
       const trySend = () => {
-        const input = getChatInput();
-        const btn   = getSubmitButton();
-        if (!input || !btn) { setTimeout(trySend, 150); return; }
-
-        input.focus();
-
+        const inp = getInput(), btn = getSubmit();
+        if(!inp||!btn) { setTimeout(trySend,150); return; }
+        inp.focus();
         const setter =
-          Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,   "value")?.set ||
-          Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
-
-        if (setter) setter.call(input, text);
-        else input.value = text;
-
-        input.dispatchEvent(new Event("input",  { bubbles: true }));
-        input.dispatchEvent(new Event("change", { bubbles: true }));
-        setTimeout(() => { btn.click(); scrollMessagesToBottom(); }, 50);
+          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set ||
+          Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,"value")?.set;
+        if(setter) setter.call(inp,text); else inp.value=text;
+        inp.dispatchEvent(new Event("input",{bubbles:true}));
+        inp.dispatchEvent(new Event("change",{bubbles:true}));
+        setTimeout(()=>{ btn.click(); scrollBottom(); },50);
       };
-
       trySend();
     }
 
-    /* ═══════════════════════════════════════════
-       QUICK-ACTIONS — bind & position above input
-    ═══════════════════════════════════════════ */
+    /* ── QUICK-ACTIONS ── */
     function bindQuickActions() {
       const qa = document.getElementById("quickActions");
-      if (!qa || qa.dataset.bound === "true") return;
-      qa.dataset.bound = "true";
-
-      qa.addEventListener("pointerdown", function(e) {
-        const btn = e.target.closest("button[data-message]");
-        if (!btn || document.body.classList.contains("chat-locked")) return;
-        e.preventDefault();
-        e.stopPropagation();
-        sendMsg(btn.dataset.message);
-      }, true);
-
-      qa.addEventListener("click", function(e) {
-        const btn = e.target.closest("button[data-message]");
-        if (btn) { e.preventDefault(); e.stopPropagation(); }
-      }, true);
+      if(!qa||qa.dataset.bound) return;
+      qa.dataset.bound="true";
+      qa.addEventListener("pointerdown", e=>{
+        const b=e.target.closest("button[data-message]");
+        if(!b||document.body.classList.contains("chat-locked")) return;
+        e.preventDefault(); e.stopPropagation();
+        sendMsg(b.dataset.message);
+      },true);
+      qa.addEventListener("click",e=>{
+        const b=e.target.closest("button[data-message]");
+        if(b){ e.preventDefault(); e.stopPropagation(); }
+      },true);
     }
 
-    /**
-     * Positions #quickActions flush above the chatroom input bar.
-     * Reads the input bar's bounding rect relative to .chat-section,
-     * then sets bottom / left / width on the absolutely-positioned div.
-     */
-    function syncQuickActionsToInput() {
-      const qa          = document.getElementById("quickActions");
-      const chatSection = document.getElementById("chatSection");
-      const inputBar    =
-        document.querySelector(".chatroom form") ||
-        document.querySelector(".chatroom .chatroom__input") ||
-        document.querySelector(".chatroom .input") ||
-        document.querySelector(".chatroom [class*='input']");
-
-      if (!qa || !chatSection || !inputBar) return;
-
-      const secRect   = chatSection.getBoundingClientRect();
-      const inputRect = inputBar.getBoundingClientRect();
-
-      // Gap between quick-actions bottom and input top
-      const GAP = 8;
-
-      const bottomFromSection = secRect.bottom - inputRect.top + GAP;
-      const centerX           = inputRect.left + inputRect.width / 2 - secRect.left;
-
-      qa.style.bottom    = `${bottomFromSection}px`;
-      qa.style.left      = `${centerX}px`;
-      qa.style.width     = `${inputRect.width}px`;
+    /* Position QA flush above input bar */
+    function syncQA() {
+      const qa  = document.getElementById("quickActions");
+      const sec = document.getElementById("chatSection");
+      const bar = document.querySelector(".chatroom form,.chatroom .chatroom__input,.chatroom .input");
+      if(!qa||!sec||!bar) return;
+      const sr=sec.getBoundingClientRect(), br=bar.getBoundingClientRect();
+      qa.style.bottom    = `${sr.bottom-br.top+8}px`;
+      qa.style.left      = `${br.left-sr.left+br.width/2}px`;
+      qa.style.width     = `${br.width}px`;
       qa.style.transform = "translateX(-50%)";
     }
 
-    /* ═══════════════════════════════════════════
-       FIX UI (called after DOM mutations)
-    ═══════════════════════════════════════════ */
-    function fixChatUi() {
-      // Ensure send arrow icon
-      const submitBtn = document.querySelector('.chatroom input[type="submit"]');
-      if (submitBtn) {
-        submitBtn.setAttribute("aria-label", "Nachricht senden");
-        submitBtn.title = "Nachricht senden";
+    /* ── FIX BUBBLES — aggressive inline-style override + hide timestamps ── */
+    function nukeBubbleInlineStyles(el) {
+      const row = el.closest(".message, [class*='message--']");
+      const isUser = row && (row.classList.contains("message--user") || row.className.includes("--user"));
+
+      el.style.setProperty("display",       "inline-block", "important");
+      el.style.setProperty("width",         "auto",         "important");
+      el.style.setProperty("max-width",     window.innerWidth<=900 ? "86%" : "min(680px,70%)", "important");
+      el.style.setProperty("height",        "auto",         "important");
+      el.style.setProperty("min-height",    "0",            "important");
+      el.style.setProperty("white-space",   "pre-wrap",     "important");
+      el.style.setProperty("overflow-wrap", "anywhere",     "important");
+      el.style.setProperty("word-break",    "normal",       "important");
+      el.style.setProperty("font-size",     "15.5px",       "important");
+      el.style.setProperty("line-height",   "1.65",         "important");
+
+      if(isUser) {
+        el.style.setProperty("background-color", "#2a5bbf",                        "important");
+        el.style.setProperty("color",            "#ffffff",                         "important");
+        el.style.setProperty("border",           "none",                            "important");
+        el.style.setProperty("border-radius",    "20px 20px 5px 20px",             "important");
+        el.style.setProperty("padding",          "12px 17px",                      "important");
+        el.style.setProperty("box-shadow",       "0 3px 16px rgba(42,91,191,.35)", "important");
+      } else {
+        el.style.setProperty("background-color", "#0f1a30",                              "important");
+        el.style.setProperty("color",            "#e8e6e0",                              "important");
+        el.style.setProperty("border",           "1px solid rgba(201,168,76,.15)",       "important");
+        el.style.setProperty("border-radius",    "20px 20px 20px 5px",                  "important");
+        el.style.setProperty("padding",          "12px 17px",                           "important");
+        el.style.setProperty("box-shadow",       "0 3px 16px rgba(0,0,0,.35)",          "important");
       }
 
-      // Placeholder
-      const input = getChatInput();
-      if (input) input.placeholder = "Bitte stelle deine Frage";
-
-      bindQuickActions();
-      syncQuickActionsToInput();
-
-      // Force dynamic bubble sizing (override any chatroom.css absolute widths)
-      document.querySelectorAll(
-        ".chatroom .message__text, .chatroom .message-text, " +
-        ".chatroom .message-content, .chatroom .message_content, " +
-        ".chatroom .message p"
-      ).forEach(bubble => {
-        bubble.style.display      = "inline-block";
-        bubble.style.width        = "auto";
-        bubble.style.maxWidth     = window.innerWidth <= 900 ? "86%" : "72%";
-        bubble.style.minWidth     = "0";
-        bubble.style.height       = "auto";
-        bubble.style.overflowWrap = "anywhere";
-        bubble.style.whiteSpace   = "pre-wrap";
-        bubble.style.wordBreak    = "normal";
-      });
+      if(row) {
+        row.style.setProperty("background",       "transparent", "important");
+        row.style.setProperty("background-color", "transparent", "important");
+        row.style.setProperty("border",           "none",        "important");
+        row.style.setProperty("box-shadow",       "none",        "important");
+        row.style.setProperty("width",            "100%",        "important");
+        row.style.setProperty("display",          "flex",        "important");
+      }
     }
 
-    /* ═══════════════════════════════════════════
-       OBSERVERS & INTERVALS
-    ═══════════════════════════════════════════ */
-    // Watch for new messages
-    const messagesObserver = new MutationObserver(() => {
-      setPlaceholder();
-      scrollMessagesToBottom();
-      fixChatUi();
-    });
+    function fixBubbles() {
+      // Inject persistent override stylesheet once
+      if(!document.getElementById("bubbleFix")) {
+        const s = document.createElement("style");
+        s.id = "bubbleFix";
+        s.textContent = `
+          .chatroom .message,
+          .chatroom [class*="message--"] {
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            width: 100% !important;
+            display: flex !important;
+          }
+          .chatroom .message--user,
+          .chatroom [class*="--user"] { justify-content: flex-end !important; }
+          .chatroom .message--bot,
+          .chatroom [class*="--bot"]  { justify-content: flex-start !important; }
 
-    setTimeout(() => {
-      const msgs =
-        document.querySelector(".chatroom__messages") ||
-        document.querySelector(".chatroom .messages") ||
-        document.querySelector(".chatroom .chats") ||
-        document.querySelector(".chatroom [class*='messages']");
-      if (msgs) messagesObserver.observe(msgs, { childList: true, subtree: true });
-    }, 700);
+          .chatroom .message__text,
+          .chatroom .message-text,
+          .chatroom .message_content,
+          .chatroom .message-content {
+            display: inline-block !important;
+            width: auto !important;
+            max-width: min(680px, 70%) !important;
+            height: auto !important;
+            white-space: pre-wrap !important;
+            overflow-wrap: anywhere !important;
+          }
+          /* Hide all timestamp / meta divs */
+          .chatroom .message__timestamp,
+          .chatroom [class*="timestamp"],
+          .chatroom .message__meta,
+          .chatroom [class*="__meta"],
+          .chatroom small { display: none !important; }
+        `;
+        document.head.appendChild(s);
+      }
 
-    // Watch for chatroom DOM changes (input rendering etc.)
-    const uiObserver = new MutationObserver(fixChatUi);
-    uiObserver.observe(document.body, { childList: true, subtree: true });
+      // Hard-override every bubble's inline styles
+      document.querySelectorAll(
+        ".chatroom .message__text, .chatroom .message-text, " +
+        ".chatroom .message_content, .chatroom .message-content"
+      ).forEach(nukeBubbleInlineStyles);
 
-    // Periodic sync (fallback)
-    setInterval(() => { fixChatUi(); syncQuickActionsToInput(); }, 1500);
+      // Hide "less than a minute" standalone nodes (text-only divs between messages)
+      const msgArea = document.querySelector(".chatroom__messages, .chatroom .messages, .chatroom .chats");
+      if(msgArea) {
+        Array.from(msgArea.children).forEach(node => {
+          const cls = node.className || "";
+          // Keep only message rows and the input form
+          if(!cls.includes("message") && node.tagName !== "FORM") {
+            node.style.setProperty("display", "none", "important");
+          }
+        });
+      }
 
-    // Click on send hides welcome
-    document.addEventListener("click", e => {
-      if (document.body.classList.contains("chat-locked")) return;
-      if (
-        e.target.closest(".chatroom input[type='submit']") ||
-        e.target.closest(".chatroom button") ||
-        e.target.closest(".quick-actions button")
-      ) hideWelcome();
-    });
-
-    // Resize re-sync
-    window.addEventListener("resize", () => {
-      syncQuickActionsToInput();
-      fixChatUi();
-    });
-
-    window.addEventListener("load", () => {
       setPlaceholder();
       bindQuickActions();
-      syncQuickActionsToInput();
-      fixChatUi();
+      syncQA();
+    }
+
+    /* ── OBSERVERS ── */
+    // Watch for new nodes and immediately fix them
+    new MutationObserver((mutations)=>{
+      let needsFix = false;
+      mutations.forEach(m => {
+        m.addedNodes.forEach(node => {
+          if(node.nodeType !== 1) return;
+          // Immediately nuke any new bubble inline styles
+          const bubbles = node.querySelectorAll
+            ? node.querySelectorAll(".message__text,.message-text,.message_content,.message-content")
+            : [];
+          bubbles.forEach(nukeBubbleInlineStyles);
+          if(node.classList && (node.className.includes("message__text") || node.className.includes("message-text"))) {
+            nukeBubbleInlineStyles(node);
+          }
+          needsFix = true;
+        });
+      });
+      if(needsFix) { fixBubbles(); scrollBottom(); }
+    }).observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:["style"]});
+
+    setInterval(()=>{ fixBubbles(); syncQA(); }, 800);
+
+    document.addEventListener("click", e=>{
+      if(document.body.classList.contains("chat-locked")) return;
+      if(e.target.closest(".chatroom input[type='submit'],.chatroom button,.quick-actions button")) hideWelcome();
     });
 
-    setTimeout(fixChatUi, 300);
-    setTimeout(fixChatUi, 900);
+    window.addEventListener("resize", ()=>{ syncQA(); fixBubbles(); });
+    window.addEventListener("load", ()=>{ setPlaceholder(); bindQuickActions(); syncQA(); fixBubbles(); });
+    setTimeout(fixBubbles, 300);
+    setTimeout(fixBubbles, 1000);
   </script>
 </body>
 </html>
